@@ -28,7 +28,7 @@ balenaEtcher는 라즈베리파이 OS를 별도로 다운 받아놓고 SD카드�
 [balenaEtcher](https://www.balena.io/etcher/)
 #### balenaEtcher 사용법 
 balenaEtcher는 미리 라즈베리파이 OS를 다운받아 놓고 SD카드 라이팅이 가능합니다. 그래서 먼저 아래 링크에서 "Raspbery PI OS (64bit)"를 다은로드 받습니다.    
-경우에 따라서는 다운로드에 시간이 많이 걸릴 수 있습니다. [라즈베라피아 64bit](https://www.raspberrypi.com/software/operating-systems/#raspberry-pi-os-64-bit)
+경우에 따라서는 다운로드에 시간이 많이 걸릴 수 있습니다. [라즈베라파이 64bit](https://www.raspberrypi.com/software/operating-systems/#raspberry-pi-os-64-bit)
      
 OS 이미지를 다운 받은 후에는 balenaEtcher를 실행합니다. 이 프로그램을 실행하면 다음과 같은 화면을 볼 수 있습니다.    
 ![image](https://user-images.githubusercontent.com/76054530/125732538-e59a94e1-6e6d-4618-b2ae-98cff665fded.png)          
@@ -47,7 +47,7 @@ SD카드를 선택한 후 "Select"를 클릭하면 원래의 화며으로 돌아
 [라즈베리파이 소프트웨어 설치 및 셋업](https://cobit-git.github.io/deepThinkCar_doc/setup)
 
 ### 링크
-[라즈베리파이 OS 이미지 만들기](https://cobit-git.github.io/deepThinkCar_doc/os)      
+[라즈베리파이 OS 이미지 만들기](https://jdedu.github.io/deepThinkCar_mini/os)      
 [라즈베리파이 소프트웨어 설치 및 셋업](https://cobit-git.github.io/deepThinkCar_doc/setup)      
 [deepThinkCar 조립](https://cobit-git.github.io/deepThinkCar_doc/assembly)    
 [deepThinkCar 라즈베리파이 VNC 환경 구축](https://cobit-git.github.io/deepThinkCar_doc/vnc)    
