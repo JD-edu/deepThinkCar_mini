@@ -3,8 +3,8 @@
 
 ###  알아보기 
 deepThinkCar-mini는 라즈베리파이 기반의 자율주행자동차 키트 입니다. 기존 deepThibCar를 좀 더 개량하고 기능을 추가한 버전입니다. OpenCV와 딥러닝을 사용하여 차선인식 자율주행 배울 수 있고, 추가적인 하드웨어장치를 이용하면 보행자나 교통신호를 식별하는 오브젝트 디텍션을 학습 할 수 있습니다. 또한 ADAS 기능을 테스트 할 수 있습니다.  
-#### OpenCV를 이용한 차선인식(ADAS)
-deepThinkCar-mini는 이미 많이 상용화 된 ADAS(Advanced Driver Asistance System)의 일부 기능을 구현해 볼 수 있습니다. ADAS의 여러가지 기능 중 차선인식 기능이 있는데, deepThinkCar-mii는 OpenCV를 이용한 차선인식이 가능합니다. 
+#### OpenCV를 이용한 차선인식
+deepThinkCar-mini는 오픈소스 컴퓨터 비젼 라이브러리인 OpenCV를 사용해서 차선을 인식하는 기능을 구현해 볼 수 있습니다. 아주 단순한 방법으로 차선을 인식하는 방법과 ADAS에 실제로 사용되는 방법까지 구현 할 수 있습니다. 
 #### 딥러닝 차선인식 주행(Behavior Cloning)
 deepThinkCar-mini는 최근에 주목받고 있는 딥러닝 기술을 이용하여 차선인식 주행을 구현해 볼 수 있습니다. OpenCV로 차선인식 주행을 몇 번 실행 하면서 얻은 데이터를 트레이닝 하여 추론모델을 생성하고, 이 추론모델을 이용하여 딥러닝 차선주행을 구현합니다.
 #### ADAS 기능 
