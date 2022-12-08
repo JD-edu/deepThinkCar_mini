@@ -1,4 +1,4 @@
-## deepThinkCar에 사용할 라즈베리파이 OS 이미지 만들기 
+## deepThinkCar-mini에 사용할 라즈베리파이 OS 이미지 만들기 
 
 라즈베리파이 OS 이미지를 만드는 방법은 여러가지 있습니다. 이 중에서 많이 사용되는 두가지 방법을 사용해서 라즈베리파이 OS 이지미를 만들 수 있습니다.
 첫번째 방법은 라즈베리파이 재단에서 권장하는 Raspberry Pi Imager를 사용하는 방업입니다. 두번째는 balenaEcher라는 프로그램을 사용하여 이미지를 만들 수 있습니다. 
@@ -10,8 +10,9 @@ Raspberry Pi Imager는 OS 이미지 다운로드와 SD카트 라이팅을 한번
 #### Raspberry Pi Image 사용법 
 라즈베리파이 OS를 이미지를 만들려면 먼저 Raspberry Pi Imager를 실행합니다. 
 ![image](https://user-images.githubusercontent.com/76054530/125730638-d5382a8e-d0c4-4c94-a7b6-a428a8768aeb.png)   
-그 다음에는 "CHOOS OS"를 클릭합니다. 클릭을 하면 여러가지 OS가 제시되는데 "Raspbery PI OS (32bit)"를 선택합니다. 
-![image](https://user-images.githubusercontent.com/76054530/125730874-a9d9d455-672c-4f64-abaa-862f60856d77.png)   
+그 다음에는 "CHOOS OS"를 클릭합니다. 클릭을 하면 여러가지 OS가 제시되는데 "Raspbery PI OS (Others)" -> ""를 선택합니다. 
+![image](https://user-images.githubusercontent.com/96219601/206336183-175da2f7-8c41-4d28-b319-d2eeb17ff1c3.png)
+
 그 다음에는 OS 이미지를 라이팅 할 SD카드를 선택합니다. 미리 PC에 16GB의 SD카드를 연결해 놓아야 합니다. SD카드가 연결되어 있으면 위 그림과 같이 SD카드가 용량과 함께 표시되는 것을 볼 수 있습니다.
 ![image](https://user-images.githubusercontent.com/76054530/125731640-0dde51e3-eb39-4b19-88a2-35ae9013cffa.png)   
 SD카드 연결를 선택했으면 그 다음에는 "WRITE"를 클락합니다. 그러면 아래 그림과 같이 라이팅이 시작이 됩니다.    
