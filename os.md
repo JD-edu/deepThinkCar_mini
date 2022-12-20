@@ -32,7 +32,7 @@ balenaEtcher는 미리 라즈베리파이 OS를 다운받아 놓고 SD카드 라
      
 OS 이미지를 다운 받은 후에는 balenaEtcher를 실행합니다. 이 프로그램을 실행하면 다음과 같은 화면을 볼 수 있습니다.    
 ![image](https://user-images.githubusercontent.com/76054530/125732538-e59a94e1-6e6d-4618-b2ae-98cff665fded.png)          
-여기서 "Flash from file"을 클릭합니다. 팝업 윈도에서 다운받은 라즈베리파이 OS이미지를 찾아서 선택합니다. 현재(2021/7/14) 다운로드된 이미지의 이름은 "2021-05-07-raspios-buster-armhf-full.img"입니다.       
+여기서 "Flash from file"을 클릭합니다. 팝업 윈도에서 다운받은 라즈베리파이 OS이미지를 찾아서 선택합니다. 현재(2022/12/20) 다운로드된 이미지의 이름은 "2022-09-22-raspios-bullseye-arm64.img"입니다.       
 ![image](https://user-images.githubusercontent.com/76054530/125734129-b5f0a8d5-2092-4460-a97a-b2d68816f634.png)          
 라이팅할 이미지를 선택하면 자동적으로 balenaEtcher의 "Select target" 버튼이 활성화 됩니다. 이 버튼을 클릭하면 연결되어 있는 SD카드의 리스트가 보입니다.      
 ![image](https://user-images.githubusercontent.com/76054530/125734389-83c5c384-c9db-4dc4-90f6-876f91d934d9.png)    
@@ -44,15 +44,15 @@ SD카드를 선택한 후 "Select"를 클릭하면 원래의 화며으로 돌아
 
 ### OS 이미지 완성이후 
 라즈베리파이 OS이미지를 SD카드에 라이팅한 후에는 라즈베리파이 셋업을 진행합니다. 라즈베리파이 셋업은 아래 링크를 클릭해 주십시오.       
-[라즈베리파이 소프트웨어 설치 및 셋업](https://cobit-git.github.io/deepThinkCar_doc/setup)
+[라즈베리파이 소프트웨어 설치 및 셋업](https://jdedu.github.io/deepThinkCar_mini/setup)
 
 ### 링크
 [라즈베리파이 OS 이미지 만들기](https://jdedu.github.io/deepThinkCar_mini/os)      
-[라즈베리파이 소프트웨어 설치 및 셋업](https://cobit-git.github.io/deepThinkCar_doc/setup)      
-[deepThinkCar 조립](https://cobit-git.github.io/deepThinkCar_doc/assembly)    
-[deepThinkCar 라즈베리파이 VNC 환경 구축](https://cobit-git.github.io/deepThinkCar_doc/vnc)    
-[deepThinkCar 하드웨어 테스트](https://cobit-git.github.io/deepThinkCar_doc/hardware)     
-[1단계 OpenCV 차선인식 주행](https://cobit-git.github.io/deepThinkCar_doc/step_1)     
-[2단계 차선인식 데이터 라벨링](https://cobit-git.github.io/deepThinkCar_doc/step_2)     
-[3단계 딥러닝 트레이닝](https://cobit-git.github.io/deepThinkCar_doc/step_3)     
-[4단계 딥러닝 차선인식 주행](https://cobit-git.github.io/deepThinkCar_doc/step_4)  
+[라즈베리파이 소프트웨어 설치 및 셋업](https://jdedu.github.io/deepThinkCar_mini/setup)      
+[deepThinkCar 조립](https://jdedu.github.io/deepThinkCar_mini/assembly)    
+[deepThinkCar 라즈베리파이 VNC 환경 구축](https://jdedu.github.io/deepThinkCar_mini/vnc)    
+[deepThinkCar 하드웨어 테스트](https://jdedu.github.io/deepThinkCar_mini/hardware)     
+[1단계 OpenCV 차선인식 주행](https://jdedu.github.io/deepThinkCar_mini/step_1)     
+[2단계 차선인식 데이터 라벨링](https://jdedu.github.io/deepThinkCar_mini/step_2)     
+[3단계 딥러닝 트레이닝](https://jdedu.github.io/deepThinkCar_mini/step_3)     
+[4단계 딥러닝 차선인식 주행](https://jdedu.github.io/deepThinkCar_mini/step_4)  
