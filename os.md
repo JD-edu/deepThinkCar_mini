@@ -49,9 +49,9 @@ SD카드를 선택한 후 "Select"를 클릭하면 원래의 화며으로 돌아
 ### 링크
 [라즈베리파이 OS 이미지 만들기](https://jd-edu.github.io/deepThinkCar_mini/os)      
 [라즈베리파이 소프트웨어 설치 및 셋업](https://jd-edu.github.io/deepThinkCar_mini/setup)      
-[deepThinkCar 조립](https://jd-edu.github.io/deepThinkCar_mini/assembly)    
-[deepThinkCar 라즈베리파이 VNC 환경 구축](https://jd-edu.github.io/deepThinkCar_mini/vnc)    
-[deepThinkCar 하드웨어 테스트](https://jd-edu.github.io/deepThinkCar_mini/hardware)     
+[deepThinkCar-mini 조립](https://jd-edu.github.io/deepThinkCar_mini/assembly)    
+[deepThinkCar-mini 라즈베리파이 VNC 환경 구축](https://jd-edu.github.io/deepThinkCar_mini/vnc)    
+[deepThinkCar-mini 하드웨어 테스트](https://jd-edu.github.io/deepThinkCar_mini/hardware)     
 [1단계 OpenCV 차선인식 주행](https://jd-edu.github.io/deepThinkCar_mini/step_1)     
 [2단계 차선인식 데이터 라벨링](https://jd-edu.github.io/deepThinkCar_mini/step_2)     
 [3단계 딥러닝 트레이닝](https://jd-edu.github.io/deepThinkCar_mini/step_3)     
