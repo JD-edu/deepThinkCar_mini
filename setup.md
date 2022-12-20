@@ -1,4 +1,4 @@
-## deepThinkCar용 라즈베리파이 보드 셋업 및 필요 소프트웨어 설치
+## deepThinkCar-mini용 라즈베리파이 보드 셋업 및 필요 소프트웨어 설치
 
 ### 라즈베리파이 보드 연결 
 라즈베리파이 OS 이미지를 만든 후에는 라즈베리파이 보드를 부팅하고 보드를 셋업하는 작업을 해야 합니다. 아래 링크는 라즈베리파이 보드 셋업을 잘 설명하고 있습니다.   
@@ -45,7 +45,7 @@ $sudo apt full-upgrade
 </code></pre>
 
 ### 파이썬3 설치 
-deepThinkCar는 파이썬3를 사용하여 코딩 합니다. 라즈베리파이 OS (32bit)에는 파이썬3와 파이썬 필수 툴인 pip3가 이미 설치되어 있습니다. 
+deepThinkCar-mini는 파이썬3를 사용하여 코딩 합니다. 라즈베리파이 OS (32bit)에는 파이썬3와 파이썬 필수 툴인 pip3가 이미 설치되어 있습니다. 
 터미널 프로그램을 실행해서 다음과 같이 확인하년 설치된 파이썬3와 pip3의 버전을 확인 할 수 있습니다. 
 <pre><code>
 pi@raspberrypi:~/deepThinkCar/test_code $ python3 --version
@@ -55,8 +55,8 @@ pip 18.1 from /usr/lib/python3/dist-packages/pip (python 3.7)
 </code></pre>
 
 ### OpenCV 설치
-OpenCV는 deepThinkCar의 카메라에서 출력되는 이미지를 프로세싱하는 컴퓨터 비젼 라이브러리 입니다. deepThinkCar 자율주행 파이썬 코드는 OpenCV 라이브러리를 사용하여 차선인식을 수행합니다.    
-OpenCV는 현재 4.x 버전이 최신 버전 입니다. 하지만 라즈베리파이에서는 OpenCV 4.x 버전을 설치하는 것이 쉽지 않습니다. 그래서 deepThinkCar는 OpenCV 3.4.6.27 버전을 설치 합니다.
+OpenCV는 deepThinkCar-mini의 카메라에서 출력되는 이미지를 프로세싱하는 컴퓨터 비젼 라이브러리 입니다. deepThinkCar-mini 자율주행 파이썬 코드는 OpenCV 라이브러리를 사용하여 차선인식을 수행합니다.    
+OpenCV는 현재 4.x 버전이 최신 버전 입니다. 하지만 라즈베리파이에서는 OpenCV 4.x 버전을 설치하는 것이 쉽지 않습니다. 그래서 deepThinkCar-mini는 OpenCV 3.4.6.27 버전을 설치 합니다.
 설치하는 순서는 다음과 같습니다. 먼저 OpenCV 3.4.6.27 버전에 필요한 라이브러리들을 설치합니다. 
 
 <pre><code>
@@ -97,7 +97,7 @@ opencv-python 라이브러리와 opencv-contrib-python 라이브러리는 동일
 이 레포지터리의 자율주행 코드는 OpenCV 3.4.6.27을 사용하여 테스트 되었습니다.
 
 ### 텐서플로
-텐서플로는 구글에서 제공하는 딥러닝 라이브러리 입니다. deepThinkCar 자율주행 코드는 텐서플로 라이브러리를 사용하여 딥러닝을 실행합니다. 텐서플로 라이브러리를 pip3를 사용해서 설치하려 하면 1.x 버전의 라이브러리가 설치 됩니다. 그래서 pip3는 텐서플로 설치에 사용할 수 없고 다음과 같은 방법으로 설치를 해야 합니다.    
+텐서플로는 구글에서 제공하는 딥러닝 라이브러리 입니다. deepThinkCar-mini 자율주행 코드는 텐서플로 라이브러리를 사용하여 딥러닝을 실행합니다. 텐서플로 라이브러리를 pip3를 사용해서 설치하려 하면 1.x 버전의 라이브러리가 설치 됩니다. 그래서 pip3는 텐서플로 설치에 사용할 수 없고 다음과 같은 방법으로 설치를 해야 합니다.    
 먼저 텐서플로 2.3.0 ARM CPU용으로 빌드된 라이브러리를 다운 받습니다.    
 [텐서플로 2.3.0 for ARM CPU](https://github.com/lhelontra/tensorflow-on-arm/releases/tag/v2.3.0)   
 위 레포지터리는 Leonardo lontra라는 브라질 개발자가 텐서플로 소스코드를 라즈베리파이에 맞게 빌드하여 깃허브에 올린 것 입니다. 텐서플로 소스를 직접 빌드하는 것은 많이 어렵기 때문에 이 버전을 다운 받아 사용합니다. 다운을 받은 후에는 다음 순서로 설치를 진행합니다. 
@@ -123,7 +123,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 이 레포지터리의 자율주행 코드는 텐서플로 2.3.0을 사용하여 테스트 되었습니다. 
 
 ### 케라스
-케라스는 텐서플로와 같이 딥러닝에 사용되는 뉴럴네트워크 API 라이브러리 입니다. deepThinkCar 자율주행 파이썬 코드는 텐서플로와 케라스를 사용하여 뉴럴네트워크 구성, 딥런닝 트레이닝, 추론 등을 수행합니다. 케라스를 설치하여면 다음과 같이 합니다.
+케라스는 텐서플로와 같이 딥러닝에 사용되는 뉴럴네트워크 API 라이브러리 입니다. deepThinkCar-mini 자율주행 파이썬 코드는 텐서플로와 케라스를 사용하여 뉴럴네트워크 구성, 딥런닝 트레이닝, 추론 등을 수행합니다. 케라스를 설치하여면 다음과 같이 합니다.
 <pre><code>
 $pip3 install keras==2.4.3
 </code></pre>
@@ -163,7 +163,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 
 ### 라즈베리파이 GPIO
-deepThinkCar는 DC모터 제어를 위해서 라즈베리파이 GPIO 라이브러리를 설치해야 합니다. GPIO 라이브러리는 터미널에서 다음과 같은 방법으로 설치가 가능합니다. 
+deepThinkCar-mini는 DC모터 제어를 위해서 라즈베리파이 GPIO 라이브러리를 설치해야 합니다. GPIO 라이브러리는 터미널에서 다음과 같은 방법으로 설치가 가능합니다. 
 <pre><code>
 sudo apt-get install python-rpi.gpio
 </code></pre>
@@ -179,16 +179,16 @@ Type "help", "copyright", "credits" or "license" for more information.
 ```
 
 ### 라즈베리파이 소프트웨어 셋업 이후 
-라즈베리파이 소프트웨어 셋업이 끝난 후에는 deepThinkCar의 하드웨어를 조립 단계로 넘어갑니다. deepThinkCar 하드웨어 조립은 아래 링크를 클릭해 주십시오.   
-[deepThinkCar 하드웨어 조립](https://cobit-git.github.io/deepThinkCar_doc/hardware)
+라즈베리파이 소프트웨어 셋업이 끝난 후에는 deepThinkCar-mini의 하드웨어를 조립 단계로 넘어갑니다. deepThinkCar-mini 하드웨어 조립은 아래 링크를 클릭해 주십시오.   
+[deepThinkCar 하드웨어 조립](https://jd-edu.github.io/deepThinkCar_mini/hardware)
 
 ### 링크
-[라즈베리파이 OS 이미지 만들기](https://cobit-git.github.io/deepThinkCar_doc/os)      
-[라즈베리파이 소프트웨어 설치 및 셋업](https://cobit-git.github.io/deepThinkCar_doc/setup)      
-[deepThinkCar 조립](https://cobit-git.github.io/deepThinkCar_doc/assembly)    
-[deepThinkCar 라즈베리파이 VNC 환경 구축](https://cobit-git.github.io/deepThinkCar_doc/vnc)    
-[deepThinkCar 하드웨어 테스트](https://cobit-git.github.io/deepThinkCar_doc/hardware)     
-[1단계 OpenCV 차선인식 주행](https://cobit-git.github.io/deepThinkCar_doc/step_1)     
-[2단계 차선인식 데이터 라벨링](https://cobit-git.github.io/deepThinkCar_doc/step_2)     
-[3단계 딥러닝 트레이닝](https://cobit-git.github.io/deepThinkCar_doc/step_3)     
-[4단계 딥러닝 차선인식 주행](https://cobit-git.github.io/deepThinkCar_doc/step_4)  
+[라즈베리파이 OS 이미지 만들기](https://jd-edu.github.io/deepThinkCar_mini/os)      
+[라즈베리파이 소프트웨어 설치 및 셋업](https://jd-edu.github.io/deepThinkCar_mini/setup)      
+[deepThinkCar 조립](https://jd-edu.github.io/deepThinkCar_mini/assembly)    
+[deepThinkCar 라즈베리파이 VNC 환경 구축](https://jd-edu.github.io/deepThinkCar_mini/vnc)    
+[deepThinkCar 하드웨어 테스트](https://jd-edu.github.io/deepThinkCar_mini/hardware)     
+[1단계 OpenCV 차선인식 주행](https://jd-edu.github.io/deepThinkCar_mini/step_1)     
+[2단계 차선인식 데이터 라벨링](https://jd-edu.github.io/deepThinkCar_mini/step_2)     
+[3단계 딥러닝 트레이닝](https://jd-edu.github.io/deepThinkCar_mini/step_3)     
+[4단계 딥러닝 차선인식 주행](https://jd-edu.github.io/deepThinkCar_mini/step_4)  
