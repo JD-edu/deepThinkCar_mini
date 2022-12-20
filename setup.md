@@ -79,32 +79,14 @@ Type "help", "copyright", "credits" or "license" for more information.
 <pre><code>
 $ sudo pip3 install tensorflow
 </code></pre>
+
+![image](https://user-images.githubusercontent.com/96219601/208645461-623283fb-4965-485c-907f-e0516b6c18fe.png)
+
 텐서플로가  제대로 설치되어야 하는지 체크 할 수 있습니다. 터미널 프로그램을 열어서 파이썬3 프롬프트를 실행하고 다음과 같이 체크해서 버전이 제대로 표시되면 설치가 성공한 것 입니다.
 ```python
-pi@raspberrypi:~/deepThinkCar $ python3
-Python 3.7.3 (default, Jan 22 2021, 20:04:44) 
-[GCC 8.3.0] on linux
-Type "help", "copyright", "credits" or "license" for more information.
->>> import tensorflow
->>> tensorflow.__version__
-'2.3.0'
->>> 
+
 ```
-이 레포지터리의 자율주행 코드는 텐서플로 2.3.0을 사용하여 테스트 되었습니다. 
-
-
-케라스는 pip3를 사용하여 설치할 수 있습니다. 다만 케라스를 제대로 파이썬에서 import 하려면 먼저 텐서플로를 설치해야 합니다.     
-케라스가 제대로 설치되어야 하는지 체크 할 수 있습니다. 터미널 프로그램을 열어서 파이썬3 프롬프트를 실행하고 다음과 같이 체크해서 버전이 제대로 표시되면 설치가 성공한 것 입니다.
-```python
-pi@raspberrypi:~/deepThinkCar $ python3
-Python 3.7.3 (default, Jan 22 2021, 20:04:44) 
-[GCC 8.3.0] on linux
-Type "help", "copyright", "credits" or "license" for more information.
->>> import keras
->>> 
-```
-
-이 레포지터리의 자율주행 코드는 케라스 2.4.3을 사용하여 테스트 되었습니다.
+에전에는 딥러닝 라이브러리인 Keras를 설치해야 하는데, 이제는 Keras가 텐서플로에 통합이 되어, 별도로 설치할 필요가 없습니다.  
 
 ### 에이다프루트 서보 제어모듈(Adafruit=circuitpython-servokit)
 deepThinkCar 앞바퀴를 제어하는 서보모터를 동작시키기 위해서 이 라이브러리가 필요합니다. 이 라이브러리는 다음과 같이 설치가 가능합니다. 
@@ -126,22 +108,22 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>> 
 ```
 
-
-### 라즈베리파이 GPIO
-deepThinkCar-mini는 DC모터 제어를 위해서 라즈베리파이 GPIO 라이브러리를 설치해야 합니다. GPIO 라이브러리는 터미널에서 다음과 같은 방법으로 설치가 가능합니다. 
+### OpenCV 카메라 사용 셋업 
+라즈베리파이 OS 64비트는 지금(2022년 12월 20일)은  pi 카메라 - OpenCV를 이용하여 비디오를 처리할 수 없습니다. 글서 legacy camera를 사용할 수 있도록 셋업을 해야 합니다. 이것을 셋업하기 위해서는 터미널을 열고 다음과 같이 입력을 합니다. 
 <pre><code>
-sudo apt-get install python-rpi.gpio
+$ sudo raspi-config
 </code></pre>
 
-이 라이브러리가 제대로 설치가 되었는지 확인하려면 터미널 프로그램에서 다음과 같이 파이썬3 프롬프트로 확인할 수 있습니다. 
-```python
-pi@raspberrypi:~ $ python3
-Python 3.7.3 (default, Jan 22 2021, 20:04:44) 
-[GCC 8.3.0] on linux
-Type "help", "copyright", "credits" or "license" for more information.
->>> import RPi.GPIO as IO
->>> 
-```
+위 명령을 실행하면 아래와 같은 화면이 나옵니다. 여기서 'Interface Options'를 선택합니다. 
+![image](https://user-images.githubusercontent.com/96219601/208649683-a861f1a5-6f3a-44ad-b179-4ba52c12c14e.png)
+
+그러면 다음과 같이 화면이 나옵니다. 여기서 'Legacy camera'를 선택합니다. 
+![image](https://user-images.githubusercontent.com/96219601/208650348-14d32e7b-b415-492c-a455-7346958a5dcf.png)
+
+그 다음에는 'Legacy camera'를 enable 합니다. 
+![image](https://user-images.githubusercontent.com/96219601/208650188-449ef42c-f6c7-439d-9ffc-617dfde64f47.png)
+
+이렇게 'Legacy camera'를 enable하면 OpenCV를 통해서 pi 카메라를 제어할 수 있습니다. 
 
 ### 라즈베리파이 소프트웨어 셋업 이후 
 라즈베리파이 소프트웨어 셋업이 끝난 후에는 deepThinkCar-mini의 하드웨어를 조립 단계로 넘어갑니다. deepThinkCar-mini 하드웨어 조립은 아래 링크를 클릭해 주십시오.   
