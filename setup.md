@@ -114,16 +114,16 @@ Type "help", "copyright", "credits" or "license" for more information.
 $ sudo raspi-config
 </code></pre>
 
-위 명령을 실행하면 아래와 같은 화면이 나옵니다. 여기서 'Interface Options'를 선택합니다. 
+위 명령을 실행하면 아래와 같은 화면이 나옵니다. 여기서 'Interface Options'를 선택합니다.   
 ![image](https://user-images.githubusercontent.com/96219601/208649683-a861f1a5-6f3a-44ad-b179-4ba52c12c14e.png)
 
-그러면 다음과 같이 화면이 나옵니다. 여기서 'Legacy camera'를 선택합니다. 
+그러면 다음과 같이 화면이 나옵니다. 여기서 'Legacy camera'를 선택합니다.   
 ![image](https://user-images.githubusercontent.com/96219601/208650348-14d32e7b-b415-492c-a455-7346958a5dcf.png)
 
-그 다음에는 'Legacy camera'를 enable 합니다. 
+그 다음에는 'Legacy camera'를 enable 합니다.   
 ![image](https://user-images.githubusercontent.com/96219601/208650188-449ef42c-f6c7-439d-9ffc-617dfde64f47.png)
 
-이렇게 'Legacy camera'를 enable하면 OpenCV를 통해서 pi 카메라를 제어할 수 있습니다. 
+이렇게 'Legacy camera'를 enable하면 OpenCV를 통해서 pi 카메라를 제어할 수 있습니다.   
 
 ### 라즈베리파이 소프트웨어 셋업 이후 
 라즈베리파이 소프트웨어 셋업이 끝난 후에는 deepThinkCar-mini의 하드웨어를 조립 단계로 넘어갑니다. deepThinkCar-mini 하드웨어 조립은 아래 링크를 클릭해 주십시오.   
