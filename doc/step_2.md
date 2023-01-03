@@ -78,7 +78,7 @@ cv2.destroyAllWindows()
 ```
 2단계 다음은 딥러닝 트레이닝을 실행하여 추론파일을 생성하는 단계입니다.    
 다음 링크를 통해서 다음 단계로 갈 수 있습니다.    
-[3단계 딥러닝을 위한 데이터 트레이닝](https://cobit-git.github.io/deepThinkCar_doc/step_3)   
+[3단계 딥러닝을 위한 데이터 트레이닝](https://jd-edu.github.io/deepThinkCar_mini/doc/step_3)   
 
 ### 링크
 [라즈베리파이 OS 이미지 만들기](https://jd-edu.github.io/deepThinkCar_mini/doc/os)      
