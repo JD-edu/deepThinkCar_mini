@@ -1,7 +1,3 @@
-## 이 문서에 나오는 방법은 라즈베리파이 32비트를 사용합니다. deepThinkCar는 2022년 10월부터 라즈베리파이 64비트 버전을 사용합니다. 다음 링크의 문서를 참고해 주십시오. 
-
-[딥씽크카 딥러닝 트레이닝](https://jd-edu.github.io/deepThinkCar_mini/step_3)
-
 ## deepThinkCar-mini 자율주행 3단계: 딥러닝 트레이닝 
 
 ### 3단계에서는...
