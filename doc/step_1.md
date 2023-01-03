@@ -138,7 +138,7 @@ cv2.destroyAllWindows()
 ### 그 다음 단계 
 1단계로 OpenCV를 통해 차선인식 주행영상을 확보 했다면, 그 다음에는 딥러닝 트레이닝을 위한 데이터셋 라벨링을 해야 합니다. 
 다음 링크를 통해서 다음 단계로 갈 수 있습니다.    
-[2단계 차선인식 데이터 라벨링](https://cobit-git.github.io/deepThinkCar_mini/doc/step_2)   
+[2단계 차선인식 데이터 라벨링](https://jd-edu.github.io/deepThinkCar_mini/doc/step_2)   
 
 ### 링크
 [라즈베리파이 OS 이미지 만들기](https://jd-edu.github.io/deepThinkCar_mini/doc/os)      
