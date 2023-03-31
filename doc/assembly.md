@@ -1,7 +1,8 @@
-## deepThinCar 조립하기 
-deepThinkCar를 조립하기 전에 박스 안에 포함 되어 있는 키트구성품을 확인합니다. 구매하신 deepThinkCar키트 안에는 다음 사진과 같은 키트 구성품이 있습니다. 
+## deep-mini 조립하기 
+deep-mini를 조립하기 전에 박스 안에 포함 되어 있는 키트구성품을 확인합니다. 구매하신 deep-mini키트 안에는 다음 사진과 같은 키트 구성품이 있습니다. 
 
-![deepThinkCar 패킹 리스트](https://user-images.githubusercontent.com/76054530/156094930-f58e972f-d33c-4b0d-b4a7-4a39dc458763.jpg)  
+![deep-mini 키트 구성품](https://user-images.githubusercontent.com/96219601/229079095-fdc35c85-dfaf-446f-ba7b-d0f034a821e8.png)
+
 
 키트의 박스안에는 키트 패킹 리스트가 있습니다. 키트 패킹 리스트와 실제 구성품이 일치하는지 확인합니다. 
 OS SD카드, 여분의 나사는 패킹 리스트에 기록되어 있지는 않지만 필요합니다. **라즈베리파이 보드는 포함되어 있지 않습니다. 별도 구매하셔야 합니다.** 
