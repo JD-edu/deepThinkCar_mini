@@ -116,13 +116,25 @@ deep-mini를 조립하기 전에 박스 안에 포함 되어 있는 키트구성
   - M3x8 볼트 6개 
   - M3x20 PCB 지지대(스페이서) 6개
   - M3 너트 6개
+![small_IMG_2111](https://user-images.githubusercontent.com/96219601/229324778-7de2bc5a-78c6-45c3-ae24-e256220268ea.JPG)
+
+
+M3x8 PCB 서포터 6개를 아래 사진과 같이 조립합니다. 6개의 M3 너트는 이후에 아크릴 상하판 조립을 할 때 사용 됩니다. 
 
 ![small_IMG_2112](https://user-images.githubusercontent.com/96219601/229324865-932fc1f4-ee60-426b-ad3c-dcaf19985508.JPG)
 
-M3x8 PCB 서포터 6개를 아래 사진과 같이 조립합니다. 
+### 7. 앞바퀴 조립 
+아크릴 상하판 조립 전에 앞바퀴를 미리 조립해야 합니다. 앞바퀴 조립에 필요한 구성품은 다음과 같습니다. 
 
-![small_IMG_2111](https://user-images.githubusercontent.com/96219601/229324778-7de2bc5a-78c6-45c3-ae24-e256220268ea.JPG)
+- 2번 좌우 바퀴 홀더 (3D 프린팅)
+- 14번 43mm 바퀴 2개 (나머지 2개는 뒷바퀴 조립에 사용됩니다.)
+- 10번 앞바퀴 고정용 D-shft 
 
+![IMG_2116](https://user-images.githubusercontent.com/96219601/229326981-cc5cba15-7984-4db8-8d91-cbbc9d26e995.JPG)
+
+좌우 바퀴 홀더와 43mm 바퀴를 D-shaft를 이용해서 다음과 같이 조립합니다. 좌우 구분이 있습니다. 주의하여 조립해야 합니다. 
+
+![IMG_2119](https://user-images.githubusercontent.com/96219601/229327022-557c7ad8-2c09-4c1c-8db8-01868dc3c45a.JPG)
 
 
 ### 4. 라즈베리파이 보드 연결 
