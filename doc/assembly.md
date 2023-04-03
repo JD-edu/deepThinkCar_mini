@@ -260,13 +260,13 @@ HAT보드를 조립한 다음 3번 연결부품 중 남은 M2.5x8 볼트 두개�
 
 ![small_IMG_2153_전원](https://user-images.githubusercontent.com/96219601/229423759-6cd4b4c2-b0f5-41dd-b951-78c51daa8896.png)
 
-라즈베리파이가 부팅이 되면, 이제 파일탐색기를 열어서 /deepThinkCar 폴더가 있는지 확인 합니다. 만약 /deepThinkCar 폴더가 없으면 터미널을 열고 deepThinkCar 소스코드를 다운 받습니다. 그리고 test_code 폴더로 이동한 다음 assembly_servo_90.py 코드를 실행합니다.
+라즈베리파이가 부팅이 되면, 이제 파일탐색기를 열어서 /deepThinkCar 폴더가 있는지 확인 합니다. 만약 /deepThinkCar 폴더가 없으면 [여기](https://github.com/JD-edu/deepThinkCar_mini) 에서 소스코드를 다운 받습니다. 그리고 test_code 폴더로 이동한 다음 assembly_servo_90.py 코드를 실행합니다.
 ```
 $git clone https://github.com/cobit-git/deepThinkCar.git
 $cd test_code
 $python3 assembly_servo_90.py
 ```
-이 assembly_servo_90.py 코드는 서보모터를 영점에 위치하도록 해 줍니다. 이렇게 한 후 서보모터 키트에 포함되어 있던 서보암 고정 나사로 서보모터와 앞바퀴 암 어셉블리를 고정하면 됩니다.
+이 assembly_servo_90.py 코드는 서보모터를 영점에 위치하도록 해 줍니다. 이렇게 한 후 서보모터 키트에 포함되어 있던 서보암 고정 볼트로 서보모터와 앞바퀴 암 어셈블리를 고정하면 됩니다.
 
 ![small_IMG_2157](https://user-images.githubusercontent.com/96219601/229424097-dd4089c6-5ce5-4a82-aa79-ebde96779e8c.JPG)
 
