@@ -46,7 +46,7 @@ for i in range(30):
     if ret:
         angle_deep, img_angle = deep_detector.follow_lane(img_org)
         if img_angle is None:
-            print("can't find lane...")
+            print("can't find lane...") 
         else:
             print(angle_deep)
             if angle_deep > 40 and angle_deep < 140:

@@ -82,7 +82,7 @@ for i in range(30):
 7. Starting motor before real driving 
 '''
 # Start motor 
-motor.motor_move_forward(30)
+motor.motor_move_forward(10)
 
 '''
 8. Perform real driving
