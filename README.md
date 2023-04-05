@@ -27,7 +27,7 @@ deepThinkCar-mini는 라즈베리파이 3B, 3B+, 4에서 테스트 되었습니�
 
 라즈베리파이 소프트웨어 셋업 및 설치하는 방법은 아래 링크를 참고해 주십시오. 
 
-[라즈베리파이 소프트웨어 설치 및 셋업](https://jd-edu.github.io/deepThinkCar_mini//doc/setup)
+[라즈베리파이 소프트웨어 설치 및 셋업](https://jd-edu.github.io/deepThinkCar_mini/doc/setup)
 
 deepThinkCar-mini는 라즈베리파이 3B, 3B+, 4에서 테스트 되었습니다. 라즈베리파이 셋업 이후에는 deepThinkCar-mini 하드웨어를 조립합니다. 
 

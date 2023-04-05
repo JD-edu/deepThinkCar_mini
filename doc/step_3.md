@@ -204,7 +204,7 @@ Epoch10/10까지 실행하는데 40분~50분 정도의 시간이 소요됩니다
 
 ### 다음 단계
 3단계에서 딥러닝 트레이닝을 통해서 추론파일을 생성하고, 이 추론파일을 deepThinkCar 라즈베리파이로 업로드 했습니다. 그 다음 단계인 4단계에서는 이 추론파일을 이용해서 딥러닝 자율주행을 실행할 수 있었습니다. 다음 링크를 통해서 4단계로 갈 수 있습니다.    
-[4단계 입러닝 자율주행하기](https://cobit-git.github.io/deepThinkCar_doc/step_4)
+[4단계 입러닝 자율주행하기](https://jd-edu.github.io/deepThinkCar_mini/doc/step_4)
 
 ### 링크
 [라즈베리파이 OS 이미지 만들기](https://jd-edu.github.io/deepThinkCar_mini/doc/os)      

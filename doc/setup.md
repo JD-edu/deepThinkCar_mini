@@ -128,7 +128,7 @@ $ sudo raspi-config
 
 ### 라즈베리파이 소프트웨어 셋업 이후 
 라즈베리파이 소프트웨어 셋업이 끝난 후에는 deepThinkCar-mini의 하드웨어를 조립 단계로 넘어갑니다. deepThinkCar-mini 하드웨어 조립은 아래 링크를 클릭해 주십시오.   
-[deepThinkCar 하드웨어 조립](https://jd-edu.github.io/deepThinkCar_mini/hardware)
+[deepThinkCar 하드웨어 조립](https://jd-edu.github.io/deepThinkCar_mini/doc/hardware)
 
 ### 링크
 [라즈베리파이 OS 이미지 만들기](https://jd-edu.github.io/deepThinkCar_mini/doc/os)      
