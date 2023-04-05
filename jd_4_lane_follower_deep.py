@@ -14,7 +14,7 @@ import time
   3) DC motor handling object form JdCarMotorL9110 class 
 '''
 # Deep learning detector object
-deep_detector = JdDeepLaneDetect("./models/LIW2_cv_lane_navigation_final.h5")
+deep_detector = JdDeepLaneDetect("./models/lane_navigation_final.h5")
 # DC motor object
 motor = JdCarMotorL9110()
 # Servo object 
@@ -61,7 +61,7 @@ for i in range(30):
 5. Starting motor before real driving 
 '''
 # Start motor 
-motor.motor_move_forward(20)
+motor.motor_move_forward(10)
 
 '''
 6. Perform real driving
