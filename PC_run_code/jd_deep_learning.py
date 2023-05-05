@@ -209,7 +209,7 @@ class JdDeepLearning:
         3-3. Saving the model weights (inference file) after each epoch. Model is saved as name of 'lane_navigation_check.h5' at './output' folder.
         '''
         # saves the model weights after each epoch if the validation loss decreased
-        checkpoint_callback = keras.callbacks.ModelCheckpoint(filepath=os.path.join(self.model_output_dir,'lane_navigation_check.h5'), verbose=1, save_best_only=True)
+        checkpoint_callback = ModelCheckpoint(filepath=os.path.join(self.model_output_dir,'lane_navigation_check.h5'), verbose=1, save_best_only=True)
 
         '''
         3-4. Performing actual deep learning training 
