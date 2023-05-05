@@ -21,107 +21,73 @@ $ ls -al
 이 파일을 USB 메모리스틱을 이용해서 PC로 옮겨야 합니다. 
    
 ### PC 파이썬에 텐서플로 개발환경 구축 
-CNN 딥러닝 트레이닝을 실행하려면 여러가지 라이브러리를 설치해야 합니다. 이 과정이 복잡한 편이어서 미리 만들어진 파이썬용 아나콘다 가상환경을 사용합니다. 
+CNN 딥러닝 트레이닝을 실행하려면 여러가지 라이브러리를 설치해야 합니다. 이를 위해서는 두가지 방법이 있습니다. 
 
-#### 아나콘다 다운로드 및 설치
-아나콘다로 가상환경을 사용하기 위해서 PC에 아나콘다가 설치되어 있지 않다면 아나코다를 설치합니다. 아나콘다를 설치하는 방법은 아래의 URL을 참고하면 됩니다.    
-   
-[아나콘다 윈도 설치](https://docs.anaconda.com/anaconda/install/windows/)
- 
-#### deepThinkCar용 아나콘다 가상환경 다운로드 
-아나콘다가 PC에 잘 설치가 되었으면 deepThinkCar 트레이닝용 가상환경을 다운로드 받습니다.    
+- 구글의 colab을 이용하는 방법
+- 내 로컬 PC에 딥러닝을 위한 파이썬 모듈을 모두 설치하는 방법 
+
+우선 내 로컬 PC에 딥러닝을 위한 파이썬 모듈을 모듀 설치하는 벙법을 설명합니다. 그 다음에 구글 colab을 이용하는 방법을 설명하겠습니다. 
+
+#### 필요한 모듈을 설치하기 
+##### 스탠다드 파이썬 모듈 
+CNN 딥러닝 트레이닝을 실행하기 위해서는 야러가지 파이썬 모듈을 설치해애 합니다. 제일 먼저 필요한 파이썬 모듈은 다음과 같습니다. 이 모듈들은 파이썬을 설치할 때 같이 설치되는 스탠다드 라이브러리 이므로 별도 설치할 필요는 없습니다. 
+
 <pre><code>
-C:\Users\user\Downloads>git clone https://github.com/cobit-git/deepThinkCar-tf-PC.git
-Cloning into 'deepThinkCar-tf-PC'...
-remote: Enumerating objects: 617, done.
-remote: Counting objects: 100% (617/617), done.
-remote: Compressing objects: 100% (608/608), done.
-remote: Total 617 (delta 12), reused 606 (delta 8), pack-reused 0R
-Receiving objects: 100% (617/617), 51.12 MiB | 22.53 MiB/s, done.
-Resolving deltas: 100% (12/12), done.
-
-C:\Users\user\Downloads>
+import os
+import random
+import fnmatch
+import datetime
+import pickle
 </code></pre>
 
-#### YML 파일을 이용한 deepThinkCar용 아나콘다 가상환경 설치 
-deepThinkCar 아나코다 가상환경을 다운로드 했으면, YML 파일을 이용하여 가상환경을 설치합니다. 다운로드 받은 deepThinkCar용 아나콘다 가상화경에 보면 "cobitlab.yml"이라는 파일이 있습니다. 이 YML 환경파일을 이용해서 deepThinkCar용 아나콘다 가상환경을 만들 수 있습니다.
-아나콘다에서 "Ananconda PowerShell Prompt"를 실행합니다.    
-![image](https://user-images.githubusercontent.com/76054530/126259373-2343277b-3438-4770-b5e8-a5dc66d3f5de.png)   
-그러면 다음과 같은 윈도 파워쉘 기반의 프롬프트윈도가 열립니다.    
-![image](https://user-images.githubusercontent.com/76054530/126259745-43d96931-6e75-480d-9c43-bbf60b510dca.png)   
-이 프롬프트에서 다음과 같이 명령을 입력해서 현재 만들어진 가상환경을 확인합니다.    
-   
-<pre><code>
-(base) PS C:\Users\user> conda env list
-# conda environments:
-#
-
-base                  *  C:\Users\user\anaconda3
-
-(base) PS C:\Users\user>
-</code></pre>
-   
-아나콘다를 처움 설치하고 가상환경을 만들지 않았다면 "base" 가상환경만 존재 합니다. deepThinkCar용 가상환경을 만들기 전에 다은로드 받은 deepThinkCar용 아나콘다 가상환경 소스코드 폴더로 이동합니다.   그리고 "ls" 명령을 입력해서 deepThinkCar용 아나콘다 가상환경 파일들을 확인합니다. 
+##### numpy 설치 
+그 다음에는 딥러닝에 많이 쓰이는 행렬연산에 사용되는 라이브러리인 numpy를 설치합니다. numpy는 다음과 같이 설치가 가능합니다. 
 
 <pre><code>
-(base) PS C:\Users\user\Downloads> cd .\deepThinkCar-tf-PC\
-(base) PS C:\Users\user\Downloads\deepThinkCar-tf-PC> ls
-
-
-    디렉터리: C:\Users\user\Downloads\deepThinkCar-tf-PC
-
-
-Mode                 LastWriteTime         Length Name
-----                 -------------         ------ ----
-d-----      2021-07-20  오후 12:14                data
-d-----      2021-07-20  오후 12:14                docs
-d-----      2021-07-20  오후 12:14                output
-d-----      2021-07-20  오후 12:14                sphinx-gen-doc
-d-----      2021-07-20  오후 12:14                __pycache__
--a----      2021-07-20  오후 12:14           2206 cobit-tensor-env.yml
--a----      2021-07-20  오후 12:14           5715 cobitlab.yml
--a----      2021-07-20  오후 12:14           8744 cobit_deep_learning.py
--a----      2021-07-20  오후 12:14            171 README.md
-
-
-(base) PS C:\Users\user\Downloads\deepThinkCar-tf-PC>
+PS C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code>pip install numpy
 </code></pre>
 
-이 중에서 "cobitlab.yml" 환경파일을 이용해서 deepThinkCar용 아나콘다 가상환경을 만들게 됩니다. YML 환경파일을 확인 했으면 다음과 같이 명령을 입력합니다. 
+##### tensorflow 설치 
+그 다음에는 구글에서 개발한 딥러닝 라이브러리인 tensorflow 라이브러리를 설치합니다. tensorflow는 다음과 같이 설치가 가능합니다. 지금까지는 (2023년 5월 4일) 파이썬 3.11 버전에서는 tensorflow가 제대로 설치가 되지 않기 때문에 3.10 버전의 파이썬을 설치해야 합니다. 
+
 <pre><code>
-(base) PS C:\Users\user\Downloads\deepThinkCar-tf-PC> conda env create --file cobitlab
+PS C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code>pip install tensorflow
 </code></pre>
 
-4분 정도 지나고 다음과 같은 메시지가 프롬프트 윈도에 나타나면 가상환경 설치가 완료된 것입니다. 설치된 가상환경의 이름은 자동으로 "cobitlab_win"으로 만들어 집니다. 
+##### scikit-learn 설치 
+그 다음에는 딥러닝용 수치 데이터를 처리하는 라이브러리인 scikit-learn을 설치합니다. scikit-learn은 다음과 같이 설치가 가능합니다. 
+
 <pre><code>
-done
-#
-# To activate this environment, use
-#
-#     $ conda activate cobitlab_win
-#
-# To deactivate an active environment, use
-#
-#     $ conda deactivate
+PS C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code>pip install sk-learn
+</code></pre>
 
-(base) PS C:\Users\user\Downloads\deepThinkCar-tf-PC>
-</code></pre>   
+##### 이미지 처리용 파이썬 라이브러리 설치 
+그 다음에는 여러가지 이미지 처리용 파이썬 라이브러리를 설치합니다. OpenCV, imgaug, matplotlib등 입니다. 각 라이브러리는 다음과 같이 설치가 가능합니다. 
 
-"cobitlab_win" 가상환경의 설치가 완료된 후, 다음과 같은 명령을 통해 가상환경을 활성화 합니다. 
+- OpenCV: 카메라 처리, 이미지 스케일링 등을 수행하는 컴퓨터 비젼 라이브러리 
+<pre><code>
+PS C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code>pip install opencv-python
+</code></pre>
 
-<pre><code>   
-(base) PS C:\Users\user\Downloads\deepThinkCar-tf-PC> conda activate cobitlab_win
-(cobitlab_win) PS C:\Users\user\Downloads\deepThinkCar-tf-PC>
-</code></pre>   
+- imgaug: 딥러닝에 사용되는 데이터 가상화에 사용되는 라이브러리
+<pre><code>
+PS C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code>pip install imgaug
+</code></pre>
+
+- matplotlib: 딥러닝 트레이닝 결과를 그래프로 디스플레이 해주는 라이브러리 
+<pre><code>
+PS C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code>pip install matplotlib
+</code></pre>
 
 ### CNN 딥러닝 트레이닝 실행 
-이제 CNN 딥러닝 트레이닝을 실행 할 준비가 되었습니다. 트레이닝을 하기 위해서 라벨링 데이터를 준비합니다. 먼저 'deepThinkCar-tf-PC" 폴더에 있는 data 폴더를 삭제합니다.  
-그 다음에 deepThinkCar 라즈베리파이에서 주피터 노트북을 통해 다운받은 "car_video_angle.zip" 파일을  "deepThinkCar-tf-PC" 폴더로 이동합니다. 그리고 압축을 풉니다. 그러면 라벨링 데이터가 담긴 data 폴더가 새로 생깁니다. 
+이제 CNN 딥러닝 트레이닝을 실행 할 준비가 되었습니다. 트레이닝을 하기 위해서 라벨링 데이터를 준비합니다. 먼저 "PC_run_code" 폴더에 있는 data 폴더를 삭제합니다.  
+그 다음에 deep-mini키트의 라즈베리파이에서 USB 메모리 스틱으로 카피한 "car_video_angle.zip" 파일을  PC의 "PC_run_code" 폴더로 이동합니다. 그리고 압축을 풉니다. 그러면 라벨링 데이터가 담긴 data 폴더가 새로 생깁니다. 
+
 <pre><code>
-(cobitlab_win) PS C:\Users\user\Downloads\deepThinkCar-tf-PC\data> ls
+PS C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code> ls
 
 
-    디렉터리: C:\Users\user\Downloads\deepThinkCar-tf-PC\data
+    디렉터리: C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code\data
 
 
 Mode                 LastWriteTime         Length Name
@@ -133,18 +99,16 @@ Mode                 LastWriteTime         Length Name
 ...
 </code></pre> 
 
-딥러닝 트레이닝을 실행하는 "cobit_deep_learning.py" 스크립트는 data 폴더에서 라벨링 데이터를 읽어서 트레이닝을 합니다. 따라서 이 data 폴더에 라벨링 데이터가 있어야 합니다. 
+딥러닝 트레이닝을 실행하는 "jd_deep_learning.py" 스크립트는 data 폴더에서 라벨링 데이터를 읽어서 트레이닝을 합니다. 따라서 이 data 폴더에 라벨링 데이터가 있어야 합니다. 
 라벨링 데이터 준비가 되었으면 다음과 같은 명령을 통해 CNN 딥러닝 트레이닝을 진행합니다.
 
 <pre><code>
-(cobitlab_win) PS C:\Users\user\Downloads\deepThinkCar-tf-PC> python .\cobit_deep_learning.py
+PS C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code> python jd_deep_learning.py
 </code></pre>
    
    
 <pre><code>  
-(cobitlab_win) PS C:\Users\user\Downloads\deepThinkCar-tf-PC> python .\cobit_deep_learning.py
-tf.__version__: 2.3.0
-keras.__version__: 2.4.3
+(cobitlab_win) PS C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code> python jd_deep_learning.py
 Training data: 152
 Validation data: 38
 2021-07-20 14:50:24.137791: I tensorflow/core/platform/cpu_feature_guard.cc:142] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN)to use the following CPU instructions in performance-critical operations:  AVX AVX2
@@ -193,14 +157,8 @@ Epoch10/10까지 실행하는데 40분~50분 정도의 시간이 소요됩니다
 
 ### 추론파일을 라즈베리파이로 전달하기 
 딥러닝 트레이닝으로 생성된 추론파일은 deepThinkCar 라즈베리파이로 다시 전달이 되어야 합니다. 추론파일을 PC에서 라즈베리파이로 전달 할 때도 주피터 노트북을 사용하여 전달합니다.    
-추론파일은 라즈베리파이 deepThinkCar 폴더의 models 폴더에 전달하면 됩니다. 
+추론파일은 라즈베리파이 deepThinkCar 폴더의 models 폴더에 전달하면 됩니다. USB 메모리스틱을 이용해서 PC에서 카피한 추론파일을 deep-mini 키트의 라즈베리파이로 카피합니다. 라즈베리파이의 "/model"폴더에 카피하면 됩니다. 
 
-![image](https://user-images.githubusercontent.com/76054530/126271416-a2126999-f99f-4416-9287-07b29cc35035.png)
-
-먼저 주피터 노트북에서 deepThinkCar/midels 폴더로 이동합니다. 주피터 노트북 오른쪽 윗쪽에 "upload" 버턴을 클릭해서 추론파일인 "lane_navigation_final.h5'를 업로드 합니다.    
-업로드가 제댜로 되었다면 다음과 같이 주피터 노트북에 디스플레이이 됩니다. 
-
-![image](https://user-images.githubusercontent.com/76054530/126324322-8526ea70-bdb8-474f-80ab-a4d5971ced77.png)
 
 ### 다음 단계
 3단계에서 딥러닝 트레이닝을 통해서 추론파일을 생성하고, 이 추론파일을 deepThinkCar 라즈베리파이로 업로드 했습니다. 그 다음 단계인 4단계에서는 이 추론파일을 이용해서 딥러닝 자율주행을 실행할 수 있었습니다. 다음 링크를 통해서 4단계로 갈 수 있습니다.    
