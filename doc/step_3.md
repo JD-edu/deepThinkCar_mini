@@ -4,8 +4,8 @@
 3단계에서는 2단계에서 라벨링 된 데이터를 CNN을 통해서 딥러닝 트레이닝을 실행합니다. 이 단계는 라즈베리파이에서 실행하지 않고 PC에서 실행하게 됩니다.    
 라즈베리파이는 CNN을 통한 딥러닝 트레이닝을 실행하기에는 성능이 많이 부족해서 PC를 이용합니다. CNN 딥러닝 트레이닝을 하기 위해서는 다음의 단계를 실행합니다. 
 
-### deepThinkCar/data 폴더의 라벨링 데이터를 PC로 옮깁니다. 
-라즈베리파이의 워킹 폴더인 deepThinkCar-mini/data 폴더에 저장된 라벨링 데이터인 PNG 파일들을 압축합니다.    
+### /deepThinkCar-mini/data 폴더의 라벨링 데이터를 PC로 옮깁니다. 
+라즈베리파이의 워킹 폴더인 /deepThinkCar-mini/data 폴더에 저장된 라벨링 데이터인 PNG 파일들을 압축합니다.    
 압축을 하는 이유는 라즈베리파이에서 PC로 라벨링 데이터를 쉽게 전달하기 위해서 입니다. 압축을 하기 위해서는 다음 코드를 실행합니다.    
 <pre><code>
 $python3 jd_label_data_compress.py
@@ -20,7 +20,7 @@ $ ls -al
 압축을 위해 "jp_label_data_compress.py" 스크립트를 실행하면 "car_image_angle.zip"이라는 압축파일이 하나 생깁니다.    
 이 파일을 USB 메모리스틱을 이용해서 PC로 옮겨야 합니다. 
    
-### PC 파이썬에 텐서플로 개발환경 구축 
+### 네 PC 파이썬에 텐서플로 개발환경 구축하기 
 CNN 딥러닝 트레이닝을 실행하려면 여러가지 라이브러리를 설치해야 합니다. 이를 위해서는 두가지 방법이 있습니다. 
 
 - 구글의 colab을 이용하는 방법
@@ -80,8 +80,8 @@ PS C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code>pip install matplotlib
 </code></pre>
 
 ### CNN 딥러닝 트레이닝 실행 
-이제 CNN 딥러닝 트레이닝을 실행 할 준비가 되었습니다. 트레이닝을 하기 위해서 라벨링 데이터를 준비합니다. 먼저 "PC_run_code" 폴더에 있는 data 폴더를 삭제합니다.  
-그 다음에 deep-mini키트의 라즈베리파이에서 USB 메모리 스틱으로 카피한 "car_video_angle.zip" 파일을  PC의 "PC_run_code" 폴더로 이동합니다. 그리고 압축을 풉니다. 그러면 라벨링 데이터가 담긴 data 폴더가 새로 생깁니다. 
+이제 CNN 딥러닝 트레이닝을 실행 할 준비가 되었습니다. 트레이닝을 하기 위해서 라벨링 데이터를 준비합니다. 먼저 /deepThinkCar-miin/PC_run_code 폴더에 있는 /data 폴더를 삭제합니다.  
+그 다음에 deep-mini키트의 라즈베리파이에서 USB 메모리 스틱으로 카피한 "car_video_angle.zip" 파일을  PC의 /deepThinkCar-mini/PC_run_code 폴더로 이동합니다. 그리고 압축을 풉니다. 그러면 라벨링 데이터가 담긴 data 폴더가 새로 생깁니다. 
 
 <pre><code>
 PS C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code> ls
@@ -108,7 +108,7 @@ PS C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code> python jd_deep_learnin
    
    
 <pre><code>  
-(cobitlab_win) PS C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code> python jd_deep_learning.py
+PS C:\Users\user\Downloads\deepThinkCar-mini\PC_run_code> python jd_deep_learning.py
 Training data: 152
 Validation data: 38
 2021-07-20 14:50:24.137791: I tensorflow/core/platform/cpu_feature_guard.cc:142] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN)to use the following CPU instructions in performance-critical operations:  AVX AVX2
@@ -153,15 +153,14 @@ Epoch 1/10
  15/300 [>.............................] - ETA: 2:25 - loss: 2526.5979
 </code></pre>
 
-Epoch10/10까지 실행하는데 40분~50분 정도의 시간이 소요됩니다. 실행이 끝이나면 output 폴더에 추론파일인 "lane_navigation_final.h5' 파일이 생성됩니다. 이 추론파일을 이용해서 딥러닝 자율주행을 실행하게 됩니다. 
+Epoch100/100까지 실행하는데 40분~50분 정도의 시간이 소요됩니다. 실행이 끝이나면 output 폴더에 추론파일인 "lane_navigation_final.h5' 파일이 생성됩니다. 이 추론파일을 이용해서 딥러닝 자율주행을 실행하게 됩니다. 
 
 ### 추론파일을 라즈베리파이로 전달하기 
-딥러닝 트레이닝으로 생성된 추론파일은 deepThinkCar 라즈베리파이로 다시 전달이 되어야 합니다. 추론파일을 PC에서 라즈베리파이로 전달 할 때도 주피터 노트북을 사용하여 전달합니다.    
-추론파일은 라즈베리파이 deepThinkCar 폴더의 models 폴더에 전달하면 됩니다. USB 메모리스틱을 이용해서 PC에서 카피한 추론파일을 deep-mini 키트의 라즈베리파이로 카피합니다. 라즈베리파이의 "/model"폴더에 카피하면 됩니다. 
+딥러닝 트레이닝으로 생성된 추론파일은 deep-mini 키트의 라즈베리파이 /deepThinkCar-mini/models 폴더에 전달하면 됩니다. USB 메모리스틱을 이용해서 PC에서 카피한 추론파일을 deep-mini 키트의 라즈베리파이로 카피합니다. 라즈베리파이의 /deepThinkCar-mini/model폴더에 카피하면 됩니다. 
 
 
 ### 다음 단계
-3단계에서 딥러닝 트레이닝을 통해서 추론파일을 생성하고, 이 추론파일을 deepThinkCar 라즈베리파이로 업로드 했습니다. 그 다음 단계인 4단계에서는 이 추론파일을 이용해서 딥러닝 자율주행을 실행할 수 있었습니다. 다음 링크를 통해서 4단계로 갈 수 있습니다.    
+3단계에서 딥러닝 트레이닝을 통해서 추론파일을 생성하고, 이 추론파일을 deep-mini 키트의 라즈베리파이로 업로드 했습니다. 그 다음 단계인 4단계에서는 이 추론파일을 이용해서 딥러닝 자율주행을 실행할 수 있었습니다. 다음 링크를 통해서 4단계로 갈 수 있습니다.    
 [4단계 입러닝 자율주행하기](https://jd-edu.github.io/deepThinkCar_mini/doc/step_4)
 
 ### 링크
