@@ -9,7 +9,7 @@ VNC를 이용해서 라즈베리파이 파이썬 프로그래밍하는 방식은
 ### PC에 VNC 설치하기
 먼저 프로그래밍에 사용할 PC에 VNC 프로그램을 설치합니다. VNC는 다음 사이트에서 다은로드 받을 수 있습니다. 
 
-[Real VNV Viewer 다운로드](https://www.realvnc.com/en/connect/download/viewer/)
+[Real VNC Viewer 다운로드](https://www.realvnc.com/en/connect/download/viewer/)
 
 VNC 프로그램은 서버프로그램과 뷰어프로그램으로 구성되는데, 서버프로그램은 라즈베피라이에서 동작합니다. 우리는 PC이 Viewer 프로그램을 설치하면 됩니다.   
 
