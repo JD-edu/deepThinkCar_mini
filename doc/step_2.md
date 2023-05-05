@@ -11,7 +11,7 @@ car_video.avi
 2단계에서는 이 "car_video.avi"를 라벨링해서 딥러닝용 데이터셋을 생성합니다. 
 
 ### 필요한 모듈 import 하기 
-2단계 딥러닝용 데이터 라벨링을 위해서 다음 파이썬 모듈들을 임포트 해야 합니다. cv2 모듈은 OpenCV 모듈 입니다. CobitOpencvLaneDetect 모듈은 실제적으로 OpenCV를 이용해서 차선을 인식하고, 차선의 각도를 파악해서 알려주는 모듈 입니다. 이것 외에 필요한 모듈을 import 합니다. 
+2단계 딥러닝용 데이터 라벨링을 위해서 다음 파이썬 모듈들을 임포트 해야 합니다. cv2 모듈은 OpenCV 모듈 입니다. JdOpencvLaneDetect 모듈은 실제적으로 OpenCV를 이용해서 차선을 인식하고, 차선의 각도를 파악해서 알려주는 모듈 입니다. 이것 외에 필요한 모듈을 import 합니다. 
 ```python
 import cv2
 from jd_opencv_lane_detect import JdOpencvLaneDetect
