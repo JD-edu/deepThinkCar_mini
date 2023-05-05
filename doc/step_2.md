@@ -4,7 +4,7 @@
 ### 2단계에서는...
 1단계에서 OpenCV로 차선인식 주행을 잘 수행했다면 /data 폴더에 "car_video.avi"라는 이름의 동영상이 생깁니다. 이 동영상은 1단계에서 수행한 차선인식 주행영상이 래코딩 되어 있습니다.    
 <pre><code>
-pi@raspberrypi:~/deeptcar/data $ ls
+pi@raspberrypi:~/deepThinkCar-mini/data $ ls
 car_video.avi
 </code></pre>
 
