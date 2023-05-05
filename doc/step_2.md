@@ -14,25 +14,30 @@ car_video.avi
 2단계 딥러닝용 데이터 라벨링을 위해서 다음 파이썬 모듈들을 임포트 해야 합니다. cv2 모듈은 OpenCV 모듈 입니다. CobitOpencvLaneDetect 모듈은 실제적으로 OpenCV를 이용해서 차선을 인식하고, 차선의 각도를 파악해서 알려주는 모듈 입니다. 이것 외에 필요한 모듈을 import 합니다. 
 ```python
 import cv2
-from cobit_opencv_lane_detect import CobitOpencvLaneDetect
+from jd_opencv_lane_detect import JdOpencvLaneDetect
 import os 
 ```
 ### 필요한 모듈 객체 만들기 
 딥러닝 데이터 라벨링을 시작하기 전에 필요한 모듈의 객체를 생성하고 초기화를 합니다. 
 영상 속에 나오는 차선인식에 사용할 OpenCV 기반의 차선인식모듈의 객체를 만듭니다.
 ```python
-cv_detector = CobitOpencvLaneDetect()
+cv_detector = JdOpencvLaneDetect()
 ```
 ### 동영상 재생을 위한 코드 
 data 폴더의 "car_video.avi" 동영상을 OpenCV 방식으로 재생하기 위한 코드를 실행합니다. 
 ```python
+# Setting video file player object 
 video_file = "data/car_video.avi"
+# OpenCV lane detect object
 cap = cv2.VideoCapture(video_file)
 ```
 ### 기존 라벨링된 데이터셋 삭제 
 기존에 라벨링 된 데이터셋이 남아 있을 수 있습니다. 이 데이털르 삭제하는 코드를 실행합니다. 라즈베리파이 OS 명령인 "rm" 명령을 사용해서 data 폴더에 PNG 파일드을 삭제 합니다. 
 ```python
-os.system("rm ./data/*.png")
+try:
+    os.system("rm ./data/*.png")  
+except OSError:
+    print("No *.png files")
 ```
 ### 데이터셋 라벨링 
 딥러닝용 데이터셋 라벨링은 다음과 같은 방법으로 진행합니다. 
@@ -54,20 +59,25 @@ angle, img_angle = cv_detector.get_steering_angle(img_lane, lanes)
 딥러닝 트레이닝을 실행할 때, 이 PNG 이미지와 이 이미지에 기록된 차선각도 두가지 요로를 가지고 트레이닝을 진행합니다. 이 모든 것을 수행하는 코드는 다음과 같습니다. 
 ```python
 while True:
+    # get image from video file player
     ret, img_org = cap.read()
     if ret:
+        # Find lane
         lanes, img_lane = cv_detector.get_lane(img_org)
+        cv2.imshow("img", img_org)
+        # Get steering agnle 
         angle, img_angle = cv_detector.get_steering_angle(img_lane, lanes)
         if img_angle is None:
-	    pass
-	else:
+            print("can't find lane...")
+        else:
+            # Generate labeling data. Steering angle is embedding in video file name
             cv2.imwrite("%s_%03d_%03d.png" % (video_file, index, angle), img_org)
             index += 1	
         if cv2.waitKey(1) & 0xFF == ord('q'):
-	    break
+            break
     else:
-        print("cap error")
-	break
+        print("camera error")
+        break
 ```
 
 ### 라벨링의 마무리 및 다음단계 
