@@ -27,11 +27,11 @@ np.set_printoptions(formatter={'float_kind':lambda x: "%.4f" % x})
 
 # tensorflow
 import tensorflow as tf
-import keras
-from keras.models import Sequential 
-from keras.layers import Conv2D, MaxPool2D, Dropout, Flatten, Dense
-from keras.optimizers import Adam
-from keras.models import load_model
+from tensorflow.keras.models import Sequential 
+from tensorflow.keras.layers import Conv2D, MaxPool2D, Dropout, Flatten, Dense
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.models import load_model
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 # sklearn
 from sklearn.utils import shuffle
