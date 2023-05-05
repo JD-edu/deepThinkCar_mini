@@ -125,7 +125,7 @@ video_orig.write(img_org)
 ```
 이 이미지를 사용해서 cv_detector.get_lane() 함수를 통해서 차선 이미지를 뽑아 냅니다. 
 ```python
-anes, img_lane = cv_detector.get_lane(img_org)
+lanes, img_lane = cv_detector.get_lane(img_org)
 ```
 이 차선 이미지를 이용해서 차선의 각도, 즉 앞바퀴 스티어링 각도를 결정합니다. 
 ```python
