@@ -47,9 +47,6 @@ from PIL import Image
 class JdDeepLearning: 
 
     def __init__(self):
-
-        print( f'tf.__version__: {tf.__version__}' )
-        print( f'keras.__version__: {keras.__version__}' )
         
         data_dir = 'data'
         file_list = os.listdir(data_dir)
