@@ -44,17 +44,18 @@ deepThinkCar는 출발 전에 앞바퀴 스티어링 앵글을 현재 차선의 
 출발을 바로 하면 딥러닝으로 차선의 굽어짐을 파악하기도 전에 차선을 벗어날 가능성이 있습니다. 그래서 출발 전 몇초 동안은 뒷바퀴를 구동하지 않고 제자리에서 딥러닝으로 먼저 차선인식을 구동합니다. 
 
 ```python
+# Prepare real starting 
 for i in range(30):
-    ret, img_flip = cap.read()
-    img_org = cv2.flip(img_flip, 0)
+    ret, img_org = cap.read()
     if ret:
         angle_deep, img_angle = deep_detector.follow_lane(img_org)
         if img_angle is None:
-            print("angle image out!!")
-            pass
+            print("can't find lane...") 
         else:
             print(angle_deep)
-            servo.servo[0].angle = angle_deep + servo_offset			
+            if angle_deep > 40 and angle_deep < 140:
+                servo.servo[0].angle = angle_deep + servo_offset	
+            		
             cv2.imshow("img_angle", img_angle)
             cv2.waitKey(1)
     else:
@@ -66,14 +67,14 @@ for i in range(30):
 ```python
 while cap.isOpened():
     ret, img_org = cap.read()
+    # Find lane angle
     angle_deep, img_angle = deep_detector.follow_lane(img_org)
     if img_angle is None:
-        print("angle image out!!")
-        pass
+        print("can't find lane...")
     else:
         print(angle_deep)
-        servo.servo[0].angle = angle_deep + servo_offset
-
+        if angle_deep > 30 and angle_deep < 160:
+            servo.servo[0].angle = angle_deep + servo_offset
         cv2.imshow("img_angle", img_angle)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
@@ -92,12 +93,12 @@ angle_deep, img_angle = deep_detector.follow_lane(img_org)
 앞바퀴 스티어링 각도가 결정 되면 이 각도로 서보를 제어합니다. 서보 각도를 제어할 때, 주행 정밀도를 높이기 위해 필요하다면 오프셋 값을 조정할 수 있습니다.
 카메라의 이미지에 차선이 검출되지 않으면 그 이지미는 무시합니다. 
 ```python
-if img_angle is None:
-    print("angle image out!!")
-        pass
-else:
-    print(angle)
-        servo.servo[0].angle = angle + servo_offset
+ if img_angle is None:
+        print("can't find lane...")
+    else:
+        print(angle_deep)
+        if angle_deep > 30 and angle_deep < 160:
+            servo.servo[0].angle = angle_deep + servo_offset
 ```
 ### 주행의 마무리
 딥러닝 차선인식 주행을 실행할 때, VNC로 deepThinkCar를 제어 한다면 'q'키를 입력해서 주행을 종료할 수 있습니다.    
