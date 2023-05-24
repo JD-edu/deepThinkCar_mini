@@ -68,4 +68,52 @@ for i in range(30):
     else:
         print("cap error")
 ```
+### 메인 루프  
+앞바퀴 스티어링 앵글 조정이 끝나면 deep-mini를 출발시키고, 딥러닝 차선인식과 오브젝트 디텍팅을 같이 실행합니다. 성능의 문제가 있으면 딥러닝 차선인식 기능을 담당하는 코드를 주석으로 막습니다. 
 
+```python
+# real driving routine
+while cap.isOpened():
+    #isStop, isImg, stopImage = objectDetectThread.getStopSign()
+    ret,  img = cap.read()
+ 
+    isStop, img = obj.isStopSignDetected(img)
+    
+    cv2.imshow('object detection', img)
+
+
+    if  isStop == False:
+        ret,  img_org = cap.read()
+
+        # Find lane angle
+        if ret :
+            angle_deep, img_angle = deep_detector.follow_lane(img_org)
+            if img_angle is None:
+                print("can't find lane...")
+            else:
+                print(angle_deep)
+                if angle_deep > 130:
+                    angle_deep = 130
+                elif angle_deep < 50:
+                    angle_deep = 50
+    
+                #servo.servo[0].angle = angle_deep + servo_offset
+                #motor.motor_move_forward(25)
+                cv2.imshow("img_angle", img_angle)
+    else:
+        pass
+        #motor.motor_stop()
+            
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+ 
+```
+
+카메라를 통해서 이지미를 읽어오는 코드는 다음과 같습니다. 
+```python
+ret, img_org = cap.read()
+```
+이 이미지를 입력값으로 deep_detector.follow_lane() 함수를 통해서 차선 각도를 추출합니다. 코드는 다음과 같습니다. 
+```python
+angle_deep, img_angle = deep_detector.follow_lane(img_org)
+```
