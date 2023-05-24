@@ -17,9 +17,9 @@ import jd_opencv_dnn_objectdetect_v3 as obj
 # Deep learning detector object
 deep_detector = JdDeepLaneDetect("./models/lane_navigation_final.h5")
 # DC motor object
-#motor = JdCarMotorL9110()
+motor = JdCarMotorL9110()
 # Servo object 
-#servo = ServoKit(channels=16)
+servo = ServoKit(channels=16)
 
 '''
 3. Creating camera object and setting resolution of camera image
@@ -57,7 +57,7 @@ for i in range(30):
             elif angle_deep < 50:
                 angle_deep = 50
 
-            #servo.servo[0].angle = angle_deep + servo_offset	
+            servo.servo[0].angle = angle_deep + servo_offset	
             		
             cv2.imshow("img_angle", img_angle)
             cv2.waitKey(1)
@@ -110,6 +110,6 @@ while cap.isOpened():
 7. Finishing the driving
 Releasing occupied resources
 '''
-#motor.motor_stop()
+motor.motor_stop()
 cap.release()
 cv2.destroyAllWindows()
