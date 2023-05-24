@@ -117,3 +117,17 @@ ret, img_org = cap.read()
 ```python
 angle_deep, img_angle = deep_detector.follow_lane(img_org)
 ```
+
+### 오브젝트 디텍팅  
+mobileNet SSD v3로 오브젝트 디텍팅하는 코드는 다음과 같습니다. "jd_opencv_dnn_objectdetect_v3.py"에서 디텍팅할 오브젝트를 정할 수 있는데 현재는 "사람", "자동차", "정지교통신호"를 감지합니다. 그리고 특히 "정지교통신호"를 감지하면 "isStop" 변수를 사용하여 deep-mini를 멈출 수 있습니다. 
+
+```python
+    isStop, isImg, stopImage = objectDetectThread.getStopSign()
+    ret,  img = cap.read()
+ 
+    isStop, img = obj.isStopSignDetected(img)
+    
+    cv2.imshow('object detection', img)
+   
+```
+
