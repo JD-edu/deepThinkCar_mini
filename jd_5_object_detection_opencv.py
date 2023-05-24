@@ -2,12 +2,10 @@
 1. importing necessary modules
 '''
 import cv2
-#from adafruit_servokit import ServoKit
+from adafruit_servokit import ServoKit
 from jd_deep_lane_detect import JdDeepLaneDetect
-#from jd_car_motor_l9110 import JdCarMotorL9110
-
+from jd_car_motor_l9110 import JdCarMotorL9110
 import time
-
 import jd_opencv_dnn_objectdetect_v3 as obj
 
 '''
@@ -42,7 +40,7 @@ It will prevents mis-driving of deepThinkCar.
 '''
 # Servo offset. You can get offset from calibration.py
 servo_offset = 0
-#servo.servo[0].angle = 90 + servo_offset
+servo.servo[0].angle = 90 + servo_offset
 
 # Prepare real starting 
 for i in range(30):
@@ -76,7 +74,7 @@ While on driving, driving is recorded.
 
 # real driving routine
 while cap.isOpened():
-    #isStop, isImg, stopImage = objectDetectThread.getStopSign()
+    isStop, isImg, stopImage = objectDetectThread.getStopSign()
     ret,  img = cap.read()
  
     isStop, img = obj.isStopSignDetected(img)
@@ -99,8 +97,8 @@ while cap.isOpened():
                 elif angle_deep < 50:
                     angle_deep = 50
     
-                #servo.servo[0].angle = angle_deep + servo_offset
-                #motor.motor_move_forward(25)
+                servo.servo[0].angle = angle_deep + servo_offset
+                motor.motor_move_forward(25)
                 cv2.imshow("img_angle", img_angle)
     else:
         pass
