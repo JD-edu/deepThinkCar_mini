@@ -60,7 +60,7 @@ for i in range(30):
             cv2.waitKey(1)
     else:
         print("cap error")
-```	    
+```
 		
 ### 메인 루프  
 앞바퀴 스티어링 앵글 조정이 끝나면 deepThinkCar를 출발시키고 딥러닝 차선인식 주행을 실행합니다. 아래 코드는 차선인식 주행을 하는 메인 루프 코드 입니다.  
@@ -119,4 +119,5 @@ cv2.destroyAllWindows()
 [2단계 차선인식 데이터 라벨링](https://jd-edu.github.io/deepThinkCar_mini/doc/step_2)      
 [3단계 딥러닝 트레이닝](https://jd-edu.github.io/deepThinkCar_mini/doc/step_3)     
 [4단계 딥러닝 차선인식 주행](https://jd-edu.github.io/deepThinkCar_mini/doc/step_4)    
+[5단계 딥러닝 오브젝트 디텍팅 주행](https://jd-edu.github.io/deepThinkCar_mini/doc/step_5) 
 
