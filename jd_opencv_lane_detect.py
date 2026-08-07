@@ -6,6 +6,22 @@ import datetime
 import sys
 
 show_image = False
+
+# Black tape detector tuning for the 320x240 Pi camera image.  Ratios are
+# used for geometry/area checks so the detector still behaves sensibly if a
+# different resolution is delivered.
+BLACK_VALUE_MAX = 110
+ROI_TOP_RATIO = 0.5
+MIN_COMPONENT_AREA_RATIO = 0.005
+MAX_COMPONENT_AREA_RATIO = 0.14
+MIN_COMPONENT_ELONGATION = 1.7
+MIN_COMPONENT_THICKNESS_RATIO = 0.0125
+MIN_VERTICAL_DIRECTION = 0.22
+MIN_COMPONENT_BOTTOM_RATIO = 0.75
+MIN_LANE_SEPARATION_RATIO = 0.12
+EXPECTED_HALF_LANE_WIDTH_RATIO = 0.19
+
+
 class JdOpencvLaneDetect(object):
     def __init__(self):
         self.curr_steering_angle = 90
@@ -31,49 +47,122 @@ class JdOpencvLaneDetect(object):
 ############################
 def detect_lane(frame):
     logging.debug('detecting lane lines...')
-    edges = detect_edges(frame)
+    black_mask = detect_black_mask(frame)
+    show_image('black mask', black_mask)
+
+    cropped_mask = region_of_interest(black_mask)
+    show_image('black mask cropped', cropped_mask)
+
+    edges = cv2.Canny(cropped_mask, 100, 200)
     show_image('edges', edges)
 
-    cropped_edges = region_of_interest(edges)
-    show_image('edges cropped', cropped_edges, True)
-
-    line_segments = detect_line_segments(cropped_edges)
-    line_segment_image = display_lines(frame, line_segments)
-    show_image("line segments", line_segment_image)
-
-    lane_lines = average_slope_intercept(frame, line_segments)
+    # The course is bounded by two thick black tape lines.  Treat each tape
+    # strip as an elongated connected component instead of looking only at
+    # its Hough edges.  This also handles a nearly vertical boundary, which
+    # the old slope calculation discarded when x1 == x2.
+    lane_lines = detect_lane_components(frame, cropped_mask)
     lane_lines_image = display_lines(frame, lane_lines)
     show_image("lane lines images", lane_lines_image)
   
     return lane_lines, lane_lines_image
 
-'''
-To improve red line detection
-1. change hue value: lower_red1[0], upper_red1[0], lower_red2[0], upper_red2[0]
-recommand values are 170 ~ 180 and 0 ~ 30. we use 2 masks.
-2. change saturation value: lower_red1[1], lower_red2[1]
-recommand values: 70 ~ 100
-3. change value value: lower_red1[1], lower_red2[1]
-recommand values: 30 ~ 100
-'''
-def detect_edges(frame):
-    # filter for red lane lines
+def detect_black_mask(frame):
+    """Return a binary mask for black tape candidates."""
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     show_image("hsv", hsv)
-    # red 
-    lower_red1 = np.array([0, 50, 50])
-    upper_red1 = np.array([40, 255, 255])
-    mask1 = cv2.inRange(hsv, lower_red1, upper_red1)
-    lower_red2 = np.array([160, 50, 50])
-    upper_red2 = np.array([180, 255, 255])
-    mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
-    mask = mask1+mask2
+    lower_black = np.array([0, 0, 0])
+    upper_black = np.array([180, 255, BLACK_VALUE_MAX])
+    mask = cv2.inRange(hsv, lower_black, upper_black)
 
-    show_image("blue mask", mask, True)
+    # Join small compression/motion-blur gaps without growing thin floor
+    # seams enough to pass the component filters below.
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 3))
+    return cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
+
+def detect_lane_components(frame, cropped_mask):
+    """Fit up to two lane-boundary lines to elongated black components."""
+    height, width = cropped_mask.shape
+    roi_area = width * int(height * (1 - ROI_TOP_RATIO))
+    min_area = max(20, int(roi_area * MIN_COMPONENT_AREA_RATIO))
+    max_area = int(roi_area * MAX_COMPONENT_AREA_RATIO)
+
+    count, labels, stats, _ = cv2.connectedComponentsWithStats(
+        cropped_mask, connectivity=8
+    )
+    candidates = []
+
+    for label in range(1, count):
+        x, y, component_width, component_height, area = stats[label]
+        if area < min_area or area > max_area:
+            continue
+        if y + component_height < height * MIN_COMPONENT_BOTTOM_RATIO:
+            continue
+
+        ys, xs = np.where(labels == label)
+        points = np.column_stack((xs, ys)).astype(np.float32)
+        rect_width, rect_height = cv2.minAreaRect(points)[1]
+        short_side = max(min(rect_width, rect_height), 1.0)
+        elongation = max(rect_width, rect_height) / short_side
+
+        vx, vy, x0, y0 = cv2.fitLine(
+            points, cv2.DIST_L2, 0, 0.01, 0.01
+        ).flatten()
+        if elongation < MIN_COMPONENT_ELONGATION:
+            continue
+        if short_side < width * MIN_COMPONENT_THICKNESS_RATIO:
+            # Floor-board seams are dark and long too, but much thinner than
+            # the tape even after the small closing operation above.
+            continue
+        if abs(vy) < MIN_VERTICAL_DIRECTION:
+            # A nearly horizontal strip means the car is looking across the
+            # track; returning no steering target is safer than driving on.
+            continue
+
+        bottom_x = x0 + (height - y0) * vx / vy
+        lookahead_y = int(height * ROI_TOP_RATIO)
+        lookahead_x = x0 + (lookahead_y - y0) * vx / vy
+        if not (-width <= bottom_x <= 2 * width):
+            continue
+        if not (-width <= lookahead_x <= 2 * width):
+            continue
+
+        score = float(area * elongation * abs(vy))
+        candidates.append((score, float(bottom_x), float(lookahead_x)))
+
+    # Prefer the strongest components and avoid returning two fragments of
+    # the same tape strip as the two lane boundaries.
+    candidates.sort(reverse=True)
+    selected = []
+    min_separation = width * MIN_LANE_SEPARATION_RATIO
+    for candidate in candidates:
+        if all(
+            abs(candidate[2] - previous[2]) >= min_separation
+            for previous in selected
+        ):
+            selected.append(candidate)
+        if len(selected) == 2:
+            break
+
+    lane_lines = []
+    for _, bottom_x, lookahead_x in selected:
+        bottom_x = max(-width, min(2 * width, int(round(bottom_x))))
+        lookahead_x = max(-width, min(2 * width, int(round(lookahead_x))))
+        lane_lines.append(
+            [[bottom_x, height, lookahead_x, lookahead_y]]
+        )
+
+    lane_lines.sort(key=lambda line: line[0][2])
+    return lane_lines
+
+
+def detect_edges(frame):
+    """Compatibility helper used by older examples and diagnostics."""
+    mask = detect_black_mask(frame)
 
     # detect edges
-    edges = cv2.Canny(mask, 200, 400)
-    show_image("blue edge", edges)
+    edges = cv2.Canny(mask, 100, 200)
+    show_image("black edge", edges)
 
     return edges
 
@@ -84,8 +173,8 @@ def region_of_interest(canny):
     # only focus bottom half of the screen
     
     polygon = np.array([[
-        (0, height*(1/2)),
-        (width, height*(1/2)),
+        (0, height * ROI_TOP_RATIO),
+        (width, height * ROI_TOP_RATIO),
         (width, height),
         (0, height),
     ]], np.int32)
@@ -100,11 +189,6 @@ def detect_line_segments(cropped_edges):
     angle = np.pi / 180  # degree in radian, i.e. 1 degree
     min_threshold = 10  # minimal of votes
     line_segments = cv2.HoughLinesP(cropped_edges, rho, angle, min_threshold, np.array([]), minLineLength=15, maxLineGap=4)
-
-    if line_segments is not None:
-        for line_segment in line_segments:
-            logging.debug('detected line_segment:')
-            logging.debug("%s of length %s" % (line_segment, length_of_line_segment(line_segment[0])))
 
     return line_segments
 
@@ -129,34 +213,36 @@ def average_slope_intercept(frame, line_segments):
     right_region_boundary = width * boundary # right lane line segment should be on left 2/3 of the screen
     
     for line_segment in line_segments:
-        for x1, y1, x2, y2 in line_segment:
-            if x1 == x2:
-                logging.info('skipping vertical line segment (slope=inf): %s' % line_segment)
-                continue
-            fit = np.polyfit((x1, x2), (y1, y2), 1)
-            slope = fit[0]
-            intercept = fit[1]
-            if slope < 0:
-                if x1 < left_region_boundary and x2 < left_region_boundary:
-                    #left_fit.append((slope, intercept))
-                    if slope < -0.75:
-                        #print("left points:", x1, x2, y1, y2) 
-                        #print("left slope", slope, "intercepts:", intercept)
-                        left_fit.append((slope, intercept))
-            else:
-                if x1 > right_region_boundary and x2 > right_region_boundary:
-                    #right_fit.append((slope, intercept))
-                    if slope > 0.75:
-                        #print("right points:", x1, x2, y1, y2) 
-                        #print("right slope", slope, "intercepts:", intercept)
-                        right_fit.append((slope, intercept))
+        # np.array(...).flatten() normalizes both the (N,1,4) shape (older
+        # OpenCV) and the (N,4) shape (OpenCV 5.x) that HoughLinesP returns.
+        x1, y1, x2, y2 = np.array(line_segment).flatten()
+        if x1 == x2:
+            logging.info('skipping vertical line segment (slope=inf): %s' % line_segment)
+            continue
+        fit = np.polyfit((x1, x2), (y1, y2), 1)
+        slope = fit[0]
+        intercept = fit[1]
+        if slope < 0:
+            if x1 < left_region_boundary and x2 < left_region_boundary:
+                #left_fit.append((slope, intercept))
+                if slope < -0.75:
+                    #print("left points:", x1, x2, y1, y2)
+                    #print("left slope", slope, "intercepts:", intercept)
+                    left_fit.append((slope, intercept))
+        else:
+            if x1 > right_region_boundary and x2 > right_region_boundary:
+                #right_fit.append((slope, intercept))
+                if slope > 0.75:
+                    #print("right points:", x1, x2, y1, y2)
+                    #print("right slope", slope, "intercepts:", intercept)
+                    right_fit.append((slope, intercept))
 
-    left_fit_average = np.average(left_fit, axis=0)
     if len(left_fit) > 0:
+        left_fit_average = np.average(left_fit, axis=0)
         lane_lines.append(make_points(frame, left_fit_average))
 
-    right_fit_average = np.average(right_fit, axis=0)
     if len(right_fit) > 0:
+        right_fit_average = np.average(right_fit, axis=0)
         lane_lines.append(make_points(frame, right_fit_average))
 
     logging.debug('lane lines: %s' % lane_lines)  # [[[316, 720, 484, 432]], [[1009, 720, 718, 432]]]
@@ -173,16 +259,24 @@ def compute_steering_angle(frame, lane_lines):
         return -90
 
     height, width, _ = frame.shape
+    camera_mid_offset_percent = 0.02
+    camera_mid = int(width / 2 * (1 + camera_mid_offset_percent))
     if len(lane_lines) == 1:
-        logging.debug('Only detected one lane line, just follow it. %s' % lane_lines[0])
-        x1, _, x2, _ = lane_lines[0][0]
-        x_offset = x2 - x1
+        # This is a two-boundary track.  When only one tape strip is in the
+        # camera, infer the lane centre using the expected half-width at the
+        # look-ahead row instead of treating that boundary as a centreline.
+        logging.debug('Only detected one lane boundary. %s' % lane_lines[0])
+        _, _, boundary_x, _ = lane_lines[0][0]
+        half_lane_width = width * EXPECTED_HALF_LANE_WIDTH_RATIO
+        if boundary_x < camera_mid:
+            lane_center = boundary_x + half_lane_width
+        else:
+            lane_center = boundary_x - half_lane_width
+        x_offset = lane_center - camera_mid
     else:
         _, _, left_x2, _ = lane_lines[0][0]
         _, _, right_x2, _ = lane_lines[1][0]
-        camera_mid_offset_percent = 0.02 # 0.0 means car pointing to center, -0.03: car is centered to left, +0.03 means car pointing to right
-        mid = int(width / 2 * (1 + camera_mid_offset_percent))
-        x_offset = (left_x2 + right_x2) / 2 - mid
+        x_offset = (left_x2 + right_x2) / 2 - camera_mid
 
     # find the steering angle, which is angle between navigation direction to end of center line
     y_offset = int(height / 2)
@@ -225,8 +319,10 @@ def display_lines(frame, lines, line_color=(0, 255, 0), line_width=10):
     line_image = np.zeros_like(frame)
     if lines is not None:
         for line in lines:
-            for x1, y1, x2, y2 in line:
-                cv2.line(line_image, (x1, y1), (x2, y2), line_color, line_width)
+            # np.array(...).flatten() normalizes both the (N,1,4) shape
+            # (older OpenCV) and the (N,4) shape (OpenCV 5.x).
+            x1, y1, x2, y2 = np.array(line).flatten()
+            cv2.line(line_image, (int(x1), int(y1)), (int(x2), int(y2)), line_color, line_width)
     line_image = cv2.addWeighted(frame, 0.8, line_image, 1, 1)
     return line_image
 
@@ -275,5 +371,3 @@ def make_points(frame, line):
     x1 = max(-width, min(2 * width, int((y1 - intercept) / slope)))
     x2 = max(-width, min(2 * width, int((y2 - intercept) / slope)))
     return [[x1, y1, x2, y2]]
-
-
