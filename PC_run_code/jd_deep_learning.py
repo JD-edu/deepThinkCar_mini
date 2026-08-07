@@ -1,251 +1,411 @@
-# -*- coding: utf-8 -*-
+"""Train the deepThinkCar steering model with current TensorFlow/Keras.
+
+The image filename must end in ``_<three digit angle>.png``.  This keeps the
+dataset produced by ``jd_2_get_train_data.py`` compatible with the original
+course workflow while allowing each run to live in its own directory.
 """
-Scripts to use
 
-Usage:
-    cobit_deep_learning_training.py data/
+import argparse
+import csv
+import hashlib
+import json
+import math
+from pathlib import Path
+import re
+import sys
 
-Description:
-    This script finds all PNG files in data folder and trains all images.
-
-Output: ***.h5
-
-'''
-1. Importing necessary python modules 
-'''
-"""
-# python standard libraries
-import os
-import random
-import fnmatch
-import datetime
-import pickle
-
-# data processing
-import numpy as np
-np.set_printoptions(formatter={'float_kind':lambda x: "%.4f" % x})
-
-# tensorflow
-import tensorflow as tf
-from tensorflow.keras.models import Sequential 
-from tensorflow.keras.layers import Conv2D, MaxPool2D, Dropout, Flatten, Dense
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.models import load_model
-from tensorflow.keras.callbacks import ModelCheckpoint
-
-# sklearn
-from sklearn.utils import shuffle
-from sklearn.model_selection import train_test_split
-
-# imaging
 import cv2
-from imgaug import augmenters as img_aug
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-from PIL import Image
-
-class JdDeepLearning: 
-
-    def __init__(self):
-        
-        data_dir = 'data'
-        file_list = os.listdir(data_dir)
-        image_paths = []
-        steering_angles = []
-        pattern = "*.png"
-        self.model_output_dir = 'output'
-        for filename in file_list:
-            if fnmatch.fnmatch(filename, pattern):
-                image_paths.append(os.path.join(data_dir, filename))
-                angle = int(filename[-7:-4])
-                steering_angles.append(angle)
-
-        self.X_train, self.X_valid, self.y_train, self.y_valid = train_test_split( image_paths, steering_angles, test_size=0.2)
-        print("Training data: %d\nValidation data: %d" % (len(self.X_train), len(self.X_valid)))
-	
-    '''
-    labeling image data augmentation 
-    '''
-    # put it together
-    def random_augment(self, image, steering_angle):
-        if np.random.rand() < 0.5:
-            image = self.pan(image)
-        if np.random.rand() < 0.5:
-            image = self.zoom(image)
-        if np.random.rand() < 0.5:
-            image = self.blur(image)
-        if np.random.rand() < 0.5:
-            image = self.adjust_brightness(image)
-        image, steering_angle = self.random_flip(image, steering_angle)
-        
-        return image, steering_angle
-
-    def my_imread(self, image_path):
-        image = cv2.imread(image_path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        return image
-
-    def zoom(self, image):
-        zoom = img_aug.Affine(scale=(1, 1.3))  # zoom from 100% (no zoom) to 130%
-        image = zoom.augment_image(image)
-        return image
-
-    def pan(self, image):
-        # pan left / right / up / down about 10%
-        pan = img_aug.Affine(translate_percent= {"x" : (-0.1, 0.1), "y": (-0.1, 0.1)})
-        image = pan.augment_image(image)
-        return image
-
-    def adjust_brightness(self, image):
-        # increase or decrease brightness by 30%
-        brightness = img_aug.Multiply((0.7, 1.3))
-        image = brightness.augment_image(image)
-        return image
-    
-    def blur(self, image):
-        kernel_size = random.randint(1, 5)  # kernel larger than 5 would make the image way too blurry
-        image = cv2.blur(image,(kernel_size, kernel_size))
-    
-        return image
-
-    def random_flip(self, image, steering_angle):
-        is_flip = random.randint(0, 1)
-        if is_flip == 1:
-            # randomly flip horizon
-            image = cv2.flip(image,1)
-            steering_angle = 180 - steering_angle
-    
-        return image, steering_angle
-    
-    def img_preprocess(self, image):
-        height, _, _ = image.shape
-        image = image[int(height/2):,:,:]  # remove top half of the image, as it is not relavant for lane following
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)  # Nvidia model said it is best to use YUV color space
-        image = cv2.GaussianBlur(image, (3,3), 0)
-        image = cv2.resize(image, (200,66)) # input image size (200,66) Nvidia model
-        image = image / 255 # normalizing, the processed image becomes black for some reason.  do we need this?
-        return image
-
-    '''
-    Creating Convolution Neural Network 
-    '''
-    def nvidia_model(self):
-        model = Sequential(name='Nvidia_Model')
-        
-        # elu=Expenential Linear Unit, similar to leaky Relu
-        # skipping 1st hiddel layer (nomralization layer), as we have normalized the data
-        
-        # Convolution Layers
-        model.add(Conv2D(24, (5, 5), strides=(2, 2), input_shape=(66, 200, 3), activation='elu')) 
-        model.add(Conv2D(36, (5, 5), strides=(2, 2), activation='elu')) 
-        model.add(Conv2D(48, (5, 5), strides=(2, 2), activation='elu')) 
-        model.add(Conv2D(64, (3, 3), activation='elu')) 
-        model.add(Dropout(0.2)) # not in original model. added for more robustness
-        model.add(Conv2D(64, (3, 3), activation='elu')) 
-        
-        # Fully Connected Layers
-        model.add(Flatten())
-        model.add(Dropout(0.2)) # not in original model. added for more robustness
-        model.add(Dense(100, activation='elu'))
-        model.add(Dense(50, activation='elu'))
-        model.add(Dense(10, activation='elu'))
-        
-        # output layer: turn angle (from 45-135, 90 is straight, <90 turn left, >90 turn right)
-        model.add(Dense(1)) 
-        
-        # since this is a regression problem not classification problem,
-        # we use MSE (Mean Squared Error) as loss function
-        optimizer = Adam(lr=1e-3) # lr is learning rate
-        model.compile(loss='mse', optimizer=optimizer)
-        
-        return model
-
-    '''
-    Generating image for deep leanring with data augmentation
-    '''
-    def image_data_generator(self, image_paths, steering_angles, batch_size, is_training):
-        while True:
-            batch_images = []
-            batch_steering_angles = []
-            
-            for i in range(batch_size):
-                random_index = random.randint(0, len(image_paths) - 1)
-                image_path = image_paths[random_index]
-                image = self.my_imread(image_paths[random_index])
-                steering_angle = steering_angles[random_index]
-                if is_training:
-                    # training: augment image
-                    image, steering_angle = self.random_augment(image, steering_angle)
-                
-                image = self.img_preprocess(image)
-                batch_images.append(image)
-                batch_steering_angles.append(steering_angle)
-                
-            yield( np.asarray(batch_images), np.asarray(batch_steering_angles))
-    '''
-    3. deep_learning()
-    - Actual deep learning traiing method 
-    '''
-    def deep_training(self):
-        '''
-        3-1. Creating CNN network based on nVIDIA model 
-        '''
-        model = self.nvidia_model()
-        print(model.summary())
-
-        ncol = 2
-        nrow = 2
-
-        '''
-        3-2. Spliting labeling dataset into train data and test data  
-        '''
-        X_train_batch, y_train_batch = next(self.image_data_generator(self.X_train, self.y_train, nrow, True))
-        X_valid_batch, y_valid_batch = next(self.image_data_generator(self.X_valid, self.y_valid, nrow, False))
-
-        '''
-        3-3. Saving the model weights (inference file) after each epoch. Model is saved as name of 'lane_navigation_check.h5' at './output' folder.
-        '''
-        # saves the model weights after each epoch if the validation loss decreased
-        checkpoint_callback = ModelCheckpoint(filepath=os.path.join(self.model_output_dir,'lane_navigation_check.h5'), verbose=1, save_best_only=True)
-
-        '''
-        3-4. Performing actual deep learning training 
-        '''
-        history = model.fit_generator(self.image_data_generator( self.X_train, self.y_train, batch_size=100, is_training=True),
-                                    steps_per_epoch=300,
-                                    epochs=10,
-                                    validation_data = self.image_data_generator( self.X_valid, self.y_valid, batch_size=100, is_training=False),
-                                    validation_steps=200,
-                                    verbose=1,
-                                    shuffle=1,
-                                    callbacks=[checkpoint_callback])
-	
-        '''
-        3-5. Saving final model weight(inference file) after training is finished.  
-        '''
-        # always save model output as soon as model finishes training
-        model.save(os.path.join(self.model_output_dir,'lane_navigation_final.h5'))
-
-        '''
-        3-6. Reporting training result. 
-        ''' 
-        date_str = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
-        history_path = os.path.join(self.model_output_dir,'history.pickle')
-        with open(history_path, 'wb') as f:
-            pickle.dump(history.history, f, pickle.HIGHEST_PROTOCOL)
-
-import datetime
+import keras
+import numpy as np
+from sklearn.model_selection import GroupShuffleSplit
+import tensorflow as tf
 
 
-'''
-2. Executing main code 
- - Creating object ( from JdDeepLearning class 
- - Running deep_learning() method 
-'''
+ANGLE_PATTERN = re.compile(r'_(\d{3})\.png$')
+SOURCE_FRAME_PATTERN = re.compile(r'(?:_f|_)(\d+)_(\d{3})\.png$')
+TARGET_CENTER_DEGREES = 90.0
+TARGET_SCALE_DEGREES = 90.0
+
+
+def sha256_file(path):
+    digest = hashlib.sha256()
+    with Path(path).open('rb') as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def dataset_sha256(image_paths):
+    """Hash ordered file names and bytes without exposing local paths."""
+    digest = hashlib.sha256()
+    for path in image_paths:
+        path = Path(path)
+        digest.update(path.name.encode('utf-8'))
+        digest.update(b'\0')
+        digest.update(bytes.fromhex(sha256_file(path)))
+    return digest.hexdigest()
+
+
+def parse_steering_angle(path):
+    match = ANGLE_PATTERN.search(Path(path).name)
+    if match is None:
+        raise ValueError('filename does not end in _<three digit angle>.png: %s' % path)
+    angle = int(match.group(1))
+    if not 0 <= angle <= 180:
+        raise ValueError('steering angle must be from 000 to 180: %s' % path)
+    return angle
+
+
+def discover_dataset(data_directory):
+    data_directory = Path(data_directory)
+    image_paths = sorted(data_directory.glob('*.png'))
+    if len(image_paths) < 10:
+        raise RuntimeError(
+            'at least 10 labeled PNG files are required in %s; found %d'
+            % (data_directory, len(image_paths))
+        )
+    angles = np.asarray(
+        [parse_steering_angle(path) for path in image_paths],
+        dtype=np.float32,
+    )
+    return image_paths, angles
+
+
+def img_preprocess(image):
+    if image is None or image.ndim != 3 or image.shape[2] != 3:
+        raise ValueError('expected a BGR image with three channels')
+    height = image.shape[0]
+    image = image[height // 2 :, :, :]
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
+    image = cv2.GaussianBlur(image, (3, 3), 0)
+    image = cv2.resize(image, (200, 66))
+    return image.astype(np.float32) / 255.0
+
+
+def load_images(image_paths):
+    images = []
+    for image_path in image_paths:
+        image = cv2.imread(str(image_path))
+        if image is None:
+            raise RuntimeError('OpenCV could not read image: %s' % image_path)
+        images.append(img_preprocess(image))
+    return np.asarray(images, dtype=np.float32)
+
+
+def temporal_group_key(path, group_size):
+    match = SOURCE_FRAME_PATTERN.search(Path(path).name)
+    if match is None:
+        raise ValueError('filename does not contain a source frame index: %s' % path)
+    source_frame = int(match.group(1))
+    run_prefix = Path(path).name[: match.start()]
+    return '%s:%06d' % (run_prefix, source_frame // group_size)
+
+
+def split_dataset_indices(image_paths, validation_fraction, seed, temporal_group_size):
+    groups = np.asarray(
+        [temporal_group_key(path, temporal_group_size) for path in image_paths]
+    )
+    if len(np.unique(groups)) < 2:
+        raise RuntimeError('dataset needs at least two temporal groups')
+    splitter = GroupShuffleSplit(
+        n_splits=1,
+        test_size=validation_fraction,
+        random_state=seed,
+    )
+    indices = np.arange(len(image_paths))
+    train_indices, validation_indices = next(splitter.split(indices, groups=groups))
+    return train_indices, validation_indices, groups
+
+
+def augment_with_horizontal_flip(images, angles):
+    flipped_images = images[:, :, ::-1, :]
+    flipped_angles = 180.0 - angles
+    return (
+        np.concatenate((images, flipped_images), axis=0),
+        np.concatenate((angles, flipped_angles), axis=0),
+    )
+
+
+def normalize_angles(angles):
+    return (np.asarray(angles, dtype=np.float32) - TARGET_CENTER_DEGREES) / (
+        TARGET_SCALE_DEGREES
+    )
+
+
+def angles_from_normalized(values):
+    return (
+        np.asarray(values, dtype=np.float32) * TARGET_SCALE_DEGREES
+        + TARGET_CENTER_DEGREES
+    )
+
+
+def build_nvidia_model():
+    model = keras.Sequential(
+        [
+            keras.layers.Input(shape=(66, 200, 3)),
+            keras.layers.Conv2D(24, (5, 5), strides=(2, 2), activation='elu'),
+            keras.layers.Conv2D(36, (5, 5), strides=(2, 2), activation='elu'),
+            keras.layers.Conv2D(48, (5, 5), strides=(2, 2), activation='elu'),
+            keras.layers.Conv2D(64, (3, 3), activation='elu'),
+            keras.layers.Dropout(0.2),
+            keras.layers.Conv2D(64, (3, 3), activation='elu'),
+            keras.layers.Flatten(),
+            keras.layers.Dropout(0.2),
+            keras.layers.Dense(100, activation='elu'),
+            keras.layers.Dense(50, activation='elu'),
+            keras.layers.Dense(10, activation='elu'),
+            keras.layers.Dense(1),
+        ],
+        name='Nvidia_Model',
+    )
+    model.compile(
+        loss='mse',
+        optimizer=keras.optimizers.Adam(learning_rate=1e-3),
+        metrics=['mae'],
+    )
+    return model
+
+
+def build_deployment_model(normalized_model):
+    degree_output = keras.layers.Rescaling(
+        scale=TARGET_SCALE_DEGREES,
+        offset=TARGET_CENTER_DEGREES,
+        name='steering_angle_degrees',
+    )(normalized_model.outputs[0])
+    return keras.Model(
+        inputs=normalized_model.inputs[0],
+        outputs=degree_output,
+        name='Nvidia_Steering_Degrees',
+    )
+
+
+def prepare_output_directory(output_directory):
+    output_directory = Path(output_directory)
+    if output_directory.exists() and any(output_directory.iterdir()):
+        raise FileExistsError(
+            'output directory is not empty; choose a new path: %s' % output_directory
+        )
+    output_directory.mkdir(parents=True, exist_ok=True)
+    return output_directory
+
+
+def train_model(
+    data_directory,
+    output_directory,
+    *,
+    epochs=50,
+    batch_size=32,
+    validation_fraction=0.2,
+    seed=20260807,
+    flip_augmentation=True,
+    temporal_group_size=20,
+):
+    if epochs < 1 or batch_size < 1:
+        raise ValueError('epochs and batch_size must be positive')
+    if not 0.1 <= validation_fraction <= 0.4:
+        raise ValueError('validation_fraction must be between 0.1 and 0.4')
+    if temporal_group_size < 2:
+        raise ValueError('temporal_group_size must be at least 2')
+
+    keras.utils.set_random_seed(seed)
+    image_paths, angles = discover_dataset(data_directory)
+    train_indices, validation_indices, temporal_groups = split_dataset_indices(
+        image_paths,
+        validation_fraction,
+        seed,
+        temporal_group_size,
+    )
+    train_paths = [image_paths[index] for index in train_indices]
+    validation_paths = [image_paths[index] for index in validation_indices]
+    train_angles = angles[train_indices]
+    validation_angles = angles[validation_indices]
+    train_images = load_images(train_paths)
+    validation_images = load_images(validation_paths)
+
+    original_train_count = len(train_images)
+    if flip_augmentation:
+        train_images, train_angles = augment_with_horizontal_flip(
+            train_images,
+            train_angles,
+        )
+    train_targets = normalize_angles(train_angles)
+    validation_targets = normalize_angles(validation_angles)
+
+    output_directory = prepare_output_directory(output_directory)
+    best_model_path = (
+        output_directory / 'lane_navigation_best_normalized_do_not_deploy.keras'
+    )
+    callbacks = [
+        keras.callbacks.ModelCheckpoint(
+            best_model_path,
+            monitor='val_loss',
+            save_best_only=True,
+            verbose=1,
+        ),
+        keras.callbacks.ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.5,
+            patience=4,
+            min_lr=1e-5,
+            verbose=1,
+        ),
+        keras.callbacks.EarlyStopping(
+            monitor='val_loss',
+            patience=10,
+            restore_best_weights=True,
+            verbose=1,
+        ),
+    ]
+
+    model = build_nvidia_model()
+    history = model.fit(
+        train_images,
+        train_targets,
+        validation_data=(validation_images, validation_targets),
+        epochs=epochs,
+        batch_size=batch_size,
+        shuffle=True,
+        callbacks=callbacks,
+        verbose=2,
+    )
+
+    deployment_model = build_deployment_model(model)
+    candidate_keras_path = output_directory / 'lane_navigation_candidate.keras'
+    candidate_h5_path = output_directory / 'lane_navigation_candidate.h5'
+    deployment_model.save(candidate_keras_path)
+    deployment_model.save(candidate_h5_path, include_optimizer=False)
+
+    # Batch size 1 matches runtime inference.  Export parity is checked over
+    # every validation image rather than a single convenient sample.
+    predictions = deployment_model.predict(
+        validation_images,
+        batch_size=1,
+        verbose=0,
+    ).reshape(-1)
+    errors = predictions - validation_angles
+    validation_loss = float(np.mean(np.square(errors)))
+    validation_mae = float(np.mean(np.abs(errors)))
+    reloaded_model = keras.models.load_model(candidate_h5_path, compile=False)
+    reloaded_predictions = reloaded_model.predict(
+        validation_images,
+        batch_size=1,
+        verbose=0,
+    )
+    export_max_abs_difference = float(
+        np.max(np.abs(reloaded_predictions.reshape(-1) - predictions))
+    )
+
+    history_data = {
+        key: [float(value) for value in values]
+        for key, values in history.history.items()
+    }
+    with (output_directory / 'history.json').open('w', encoding='utf-8') as history_file:
+        json.dump(history_data, history_file, indent=2, sort_keys=True)
+        history_file.write('\n')
+
+    with (output_directory / 'validation_predictions.csv').open(
+        'w', encoding='utf-8', newline=''
+    ) as prediction_file:
+        writer = csv.DictWriter(
+            prediction_file,
+            fieldnames=('image', 'expected_angle', 'predicted_angle', 'error'),
+        )
+        writer.writeheader()
+        for path, expected, predicted, error in zip(
+            validation_paths,
+            validation_angles,
+            predictions,
+            errors,
+        ):
+            writer.writerow(
+                {
+                    'image': path.name,
+                    'expected_angle': float(expected),
+                    'predicted_angle': float(predicted),
+                    'error': float(error),
+                }
+            )
+
+    summary = {
+        'dataset_id': Path(data_directory).name,
+        'dataset_sha256': dataset_sha256(image_paths),
+        'dataset_images': len(image_paths),
+        'train_images_before_augmentation': original_train_count,
+        'train_images_after_augmentation': len(train_images),
+        'validation_images': len(validation_images),
+        'flip_augmentation': flip_augmentation,
+        'target_normalization': '(angle - 90) / 90',
+        'split_strategy': 'source-frame temporal groups',
+        'validation_fraction_requested': validation_fraction,
+        'validation_fraction_actual': len(validation_images) / len(image_paths),
+        'temporal_group_size': temporal_group_size,
+        'train_temporal_groups': len(np.unique(temporal_groups[train_indices])),
+        'validation_temporal_groups': len(
+            np.unique(temporal_groups[validation_indices])
+        ),
+        'seed': seed,
+        'epochs_requested': epochs,
+        'epochs_completed': len(history.history['loss']),
+        'batch_size': batch_size,
+        'validation_mse': validation_loss,
+        'validation_rmse': float(math.sqrt(validation_loss)),
+        'validation_mae': validation_mae,
+        'validation_bias': float(np.mean(errors)),
+        'validation_max_absolute_error': float(np.max(np.abs(errors))),
+        'validation_angle_min': float(validation_angles.min()),
+        'validation_angle_max': float(validation_angles.max()),
+        'prediction_min': float(predictions.min()),
+        'prediction_max': float(predictions.max()),
+        'export_max_abs_difference': export_max_abs_difference,
+        'candidate_h5': candidate_h5_path.name,
+        'candidate_h5_sha256': sha256_file(candidate_h5_path),
+        'candidate_keras': candidate_keras_path.name,
+        'normalized_checkpoint': best_model_path.name,
+        'normalized_checkpoint_deployable': False,
+        'input_contract': 'BGR lower half -> YUV -> blur -> 200x66 -> /255',
+        'output_contract': 'one steering angle in degrees',
+        'promotion_status': 'candidate_requires_independent_drive_test',
+        'validation_limitation': 'same-session temporal split is not independent',
+        'python_version': sys.version.split()[0],
+        'opencv_version': cv2.__version__,
+        'numpy_version': np.__version__,
+        'keras_version': keras.__version__,
+        'tensorflow_version': tf.__version__,
+    }
+    with (output_directory / 'training_summary.json').open(
+        'w', encoding='utf-8'
+    ) as summary_file:
+        json.dump(summary, summary_file, indent=2, sort_keys=True)
+        summary_file.write('\n')
+    return summary
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        description='Train the NVIDIA-style steering-angle regression model.'
+    )
+    parser.add_argument('--data-dir', type=Path, required=True)
+    parser.add_argument('--output-dir', type=Path, required=True)
+    parser.add_argument('--epochs', type=int, default=50)
+    parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--validation-fraction', type=float, default=0.2)
+    parser.add_argument('--temporal-group-size', type=int, default=20)
+    parser.add_argument('--seed', type=int, default=20260807)
+    parser.add_argument('--no-flip-augmentation', action='store_true')
+    args = parser.parse_args(argv)
+    summary = train_model(
+        args.data_dir,
+        args.output_dir,
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        validation_fraction=args.validation_fraction,
+        seed=args.seed,
+        flip_augmentation=not args.no_flip_augmentation,
+        temporal_group_size=args.temporal_group_size,
+    )
+    print(json.dumps(summary, indent=2, sort_keys=True))
+    return 0
+
+
 if __name__ == '__main__':
-    jdlab = JdDeepLearning()
-    jdlab.deep_training()
-    print("Deep learinig training finished!")
-
-
-
+    raise SystemExit(main())
