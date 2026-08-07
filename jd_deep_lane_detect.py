@@ -1,22 +1,31 @@
 import cv2
 import numpy as np
 import math
-import tensorflow as tf
 from keras.models import load_model
 
 _SHOW_IMAGE = False
 
 class JdDeepLaneDetect(object):
 
-    def __init__(self, model_path):
+    def __init__(self, model_path=None, model=None):
         self.curr_steering_angle = 90
-        if model_path is None:
-            print("wrong model path!")
-            return 
+        if model is not None:
+            self.model = model
+        elif model_path is None:
+            raise ValueError('model_path is required')
         else:
-            self.model = load_model(model_path)
+            # The model is used only for inference.  compile=False also lets
+            # current Keras load legacy H5 files whose saved optimizer/loss
+            # names can no longer be deserialized.
+            self.model = load_model(model_path, compile=False)
+        if tuple(self.model.input_shape[-3:]) != (66, 200, 3):
+            raise ValueError('lane model input must be (66, 200, 3)')
+        if tuple(self.model.output_shape[-1:]) != (1,):
+            raise ValueError('lane model must return one steering angle')
     
     def follow_lane(self, frame):
+        if frame is None:
+            raise ValueError('frame is required')
         show_image("orig", frame)
         self.curr_steering_angle = self.compute_steering_angle(frame)
         final_frame = display_heading_line(frame, self.curr_steering_angle)
@@ -29,9 +38,20 @@ class JdDeepLaneDetect(object):
         # Below code causes slow video frame rate   
         # steering_angle = self.model.predict(X)[0]
         # Predict lane angle using deep learning 
-        steering_angle = self.model(X, training=False)[0]
-        # round the nearest integer
-        return int(steering_angle + 0.5) 
+        prediction = np.asarray(self.model(X, training=False)).reshape(-1)
+        if prediction.size != 1:
+            raise RuntimeError('lane model returned %d values' % prediction.size)
+        steering_angle = float(prediction[0])
+        if not np.isfinite(steering_angle):
+            raise RuntimeError('lane model returned a non-finite steering angle')
+        if not 0.0 <= steering_angle <= 180.0:
+            raise RuntimeError(
+                'lane model returned an out-of-range steering angle: %.3f'
+                % steering_angle
+            )
+        # Round the nearest positive integer without converting a rank-1
+        # Tensor directly to int (NumPy 2.x rejects that conversion).
+        return int(np.floor(steering_angle + 0.5))
 
 def img_preprocess(image):
     height, _, _ = image.shape
@@ -43,8 +63,7 @@ def img_preprocess(image):
     # input image size (200,66) Nvidia model
     image = cv2.resize(image, (200,66))
     # normalizing
-    image = image / 255 
-    return image
+    return image.astype(np.float32) / 255.0
 
 def display_heading_line(frame, steering_angle, line_color=(0, 0, 255), line_width=5, ):
     heading_image = np.zeros_like(frame)
