@@ -85,7 +85,45 @@ OpenCV 기반 차선인식 주행을 하는 파이썬 코드에 대한 설명은
 데이터셋의 정확도, 데이터셋의 양에 따라 딥러닝 차선인식 주행의 정확도를 비교할 수 있습니다. 
 딥러닝 차선인식 주행에 대한 설명은 다음 링크를 참고해 주십시오.
 
-[4단계 딥러닝 차선인식 주행](https://jd-edu.github.io/deepThinkCar_mini/doc/step_4)  
+[4단계 딥러닝 차선인식 주행](https://jd-edu.github.io/deepThinkCar_mini/doc/step_4)
+
+#### 5단계: 객체 인식과 차선 추종 결합
+
+5단계에서는 사람·자동차·트럭·정지 표지판의 정지 정책을 차선 추종과
+결합합니다. 실제 구동 전에는 녹화 영상과 `--drive` 없는 카메라
+검증을 먼저 실행합니다.
+
+[5단계 딥러닝 오브젝트 디텍팅 주행](https://jd-edu.github.io/deepThinkCar_mini/doc/step_5)
+
+#### 현재 환경에서 다시 실행한 기록
+2026년 8월 7일에 2~5단계를 현재 Python/Keras/OpenCV 환경에서 직접 다시 실행하고, 녹화 영상 기반 dry-run과 아직 남은 실제 주행 안전 조건을 기록했습니다.
+
+[2~5단계 실제 검증 기록 (2026-08-07)](doc/verified_step_2_to_5_2026-08-07.md)
+
+#### 현재 안전 실행 순서
+
+실차 출력은 저장된 서보 중앙값이 있을 때만 허용한다. 먼저 모터를 끈
+상태에서 중앙값을 맞추고 `s`로 저장한다.
+
+```bash
+python3 test_code/calibration.py
+```
+
+검정 테이프 두 줄 트랙은 녹화 파일을 덮어쓰지 않는 OpenCV 전용
+실행기로 먼저 확인한다. `--drive`가 없으면 모터와 서보 출력은 없다.
+
+```bash
+# 카메라와 차선 검출만 60프레임 확인
+python3 jd_3_lane_follower_opencv.py --max-frames 60
+
+# 바퀴를 띄운 상태에서 짧은 저속 확인
+python3 jd_3_lane_follower_opencv.py --drive --speed 20 --max-frames 200
+```
+
+`models/lane_navigation_candidate_20260807.h5`는 오늘 데이터로 학습한
+비교 후보다. 같은 주행에서 나눈 검증만 거쳤으므로 실제 주행 기본
+모델로 승격하지 않았으며, 새로 촬영한 미사용 영상에서 비교할 때만
+`--model`로 명시한다.
 
 ### 링크
 [라즈베리파이 OS 이미지 만들기](https://jd-edu.github.io/deepThinkCar_mini/doc/os)      

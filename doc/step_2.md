@@ -1,6 +1,16 @@
 
 ## deepThinkCar 자율주행 2단계: 딥러닝용 데이터 라벨링 
 
+> **2026 안전 변경:** 1단계의 새 기본 출력은 timestamp가 붙은 AVI입니다.
+> 1단계가 출력한 실제 파일을 `--video`로, 비어 있는 새 디렉터리를
+> `--output-dir`로 지정합니다. 변환기는 기존 PNG나 AVI를 삭제하지 않습니다.
+>
+> ```bash
+> python3 jd_2_get_train_data.py \
+>   --video data/car_video_YYYYMMDD_HHMMSS.avi \
+>   --output-dir data/lane_dataset_YYYYMMDD_HHMMSS
+> ```
+
 ### 2단계에서는...
 1단계에서 OpenCV로 차선인식 주행을 잘 수행했다면 /data 폴더에 "car_video.avi"라는 이름의 동영상이 생깁니다. 이 동영상은 1단계에서 수행한 차선인식 주행영상이 래코딩 되어 있습니다.    
 <pre><code>
@@ -101,9 +111,3 @@ cv2.destroyAllWindows()
 [3단계 딥러닝 트레이닝](https://jd-edu.github.io/deepThinkCar_mini/doc/step_3)     
 [4단계 딥러닝 차선인식 주행](https://jd-edu.github.io/deepThinkCar_mini/doc/step_4)    
 [5단계 딥러닝 오브젝트 디텍팅 주행](https://jd-edu.github.io/deepThinkCar_mini/doc/step_5) 
-
-
-
-
-
-

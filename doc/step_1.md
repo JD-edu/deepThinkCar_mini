@@ -1,6 +1,12 @@
 
 ## DeeptCar 자율주행 1단계: OpenCV 차선인식 주행  
 
+> **2026 안전 변경:** 현재 `jd_1_record_lane_video.py`는 기존 영상을
+> 덮어쓰지 않도록 `data/car_video_YYYYMMDD_HHMMSS.avi`에 저장하고 실제
+> 경로를 출력합니다. 특정 이름이 필요하면 존재하지 않는 경로를
+> `--output`으로 지정합니다. 저장된 서보 캘리브레이션과 5개 연속 차선
+> 프레임이 없으면 출발하지 않습니다.
+
 ### 1단계에서는...
 1단계에서는 OpenCV를 이용한 차선인식 주행을 실행할 수 있습니다. 카메라 영상을 이용해서 차선을 인식하는 기능은 이미 ADAS(Advanced Driver Assistance System)라는 이름으로 사용화 되어 있습니다. Deep-mini는 OpenCV 라이브러리를 이용해서 ADAS와 유사하면서 기초적인 차선인식 주행을 실행할 수 있습니다. 1단계에서는 OpenCV를 통한 차선인식 주행을 할 뿐 아니라 차선을 따라 주행하는 영상 데이터를 얻을 수 있습니다. 2단계에서는 이 영상 데이터를 가공해서 딥러닝 트레이닝에 필요한 데이터셋을 얻는 라벨링 작업을 하게 됩니다. 
 
@@ -169,8 +175,3 @@ cv2.destroyAllWindows()
 [3단계 딥러닝 트레이닝](https://jd-edu.github.io/deepThinkCar_mini/doc/step_3)     
 [4단계 딥러닝 차선인식 주행](https://jd-edu.github.io/deepThinkCar_mini/doc/step_4)    
 [5단계 딥러닝 오브젝트 디텍팅 주행](https://jd-edu.github.io/deepThinkCar_mini/doc/step_5) 
-
-
-
-
-
