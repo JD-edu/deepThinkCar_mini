@@ -102,6 +102,21 @@ class DeepTrainingTest(unittest.TestCase):
                 seed=7,
             )
 
+    def test_named_holdout_run_is_never_used_for_training(self):
+        paths = [
+            Path('%s_f%06d_090.png' % (run, frame))
+            for run in ('layout_a', 'layout_b', 'layout_c_holdout')
+            for frame in range(20)
+        ]
+        train, validation, groups = training.split_dataset_by_run_indices(
+            paths,
+            validation_fraction=0.25,
+            seed=7,
+            validation_run_prefixes=['layout_c_holdout'],
+        )
+        self.assertEqual({'layout_a', 'layout_b'}, set(groups[train]))
+        self.assertEqual({'layout_c_holdout'}, set(groups[validation]))
+
     def test_steering_region_counts_exposes_coverage(self):
         self.assertEqual(
             {

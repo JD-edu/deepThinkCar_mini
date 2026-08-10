@@ -131,12 +131,39 @@ def split_dataset_indices(image_paths, validation_fraction, seed, temporal_group
     return train_indices, validation_indices, groups
 
 
-def split_dataset_by_run_indices(image_paths, validation_fraction, seed):
+def split_dataset_by_run_indices(
+    image_paths,
+    validation_fraction,
+    seed,
+    validation_run_prefixes=None,
+):
     groups = np.asarray([source_run_key(path) for path in image_paths])
-    if len(np.unique(groups)) < 3:
+    unique_groups = np.unique(groups)
+    if len(unique_groups) < 3:
         raise RuntimeError(
             'run-level validation requires at least three independent recordings'
         )
+    prefixes = tuple(validation_run_prefixes or ())
+    if prefixes:
+        selected_groups = {
+            group
+            for group in unique_groups
+            if any(group.startswith(prefix) for prefix in prefixes)
+        }
+        if not selected_groups:
+            raise RuntimeError(
+                'no source run matches validation prefix(es): %s'
+                % ', '.join(prefixes)
+            )
+        validation_mask = np.asarray(
+            [group in selected_groups for group in groups],
+            dtype=bool,
+        )
+        validation_indices = np.flatnonzero(validation_mask)
+        train_indices = np.flatnonzero(~validation_mask)
+        if len(train_indices) == 0:
+            raise RuntimeError('validation prefixes selected every source run')
+        return train_indices, validation_indices, groups
     splitter = GroupShuffleSplit(
         n_splits=1,
         test_size=validation_fraction,
@@ -239,6 +266,7 @@ def train_model(
     flip_augmentation=True,
     temporal_group_size=20,
     split_strategy='temporal',
+    validation_run_prefixes=None,
 ):
     if epochs < 1 or batch_size < 1:
         raise ValueError('epochs and batch_size must be positive')
@@ -248,6 +276,8 @@ def train_model(
         raise ValueError('temporal_group_size must be at least 2')
     if split_strategy not in ('temporal', 'run'):
         raise ValueError('split_strategy must be temporal or run')
+    if validation_run_prefixes and split_strategy != 'run':
+        raise ValueError('validation_run_prefixes requires split_strategy=run')
 
     keras.utils.set_random_seed(seed)
     image_paths, angles = discover_dataset(data_directory)
@@ -257,6 +287,7 @@ def train_model(
                 image_paths,
                 validation_fraction,
                 seed,
+                validation_run_prefixes,
             )
         )
     else:
@@ -418,6 +449,9 @@ def train_model(
         'validation_source_runs': sorted(
             {source_run_key(path) for path in validation_paths}
         ),
+        'validation_run_prefixes_requested': list(
+            validation_run_prefixes or ()
+        ),
         'dataset_steering_regions': steering_region_counts(angles),
         'train_steering_regions_before_augmentation': steering_region_counts(
             original_train_angles
@@ -481,6 +515,12 @@ def main(argv=None):
         default='temporal',
         help='use run to keep complete recordings out of training',
     )
+    parser.add_argument(
+        '--validation-run-prefix',
+        action='append',
+        default=[],
+        help='with --split-strategy run, hold out matching source run prefix',
+    )
     parser.add_argument('--seed', type=int, default=20260807)
     parser.add_argument('--no-flip-augmentation', action='store_true')
     args = parser.parse_args(argv)
@@ -494,6 +534,7 @@ def main(argv=None):
         flip_augmentation=not args.no_flip_augmentation,
         temporal_group_size=args.temporal_group_size,
         split_strategy=args.split_strategy,
+        validation_run_prefixes=args.validation_run_prefix,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0

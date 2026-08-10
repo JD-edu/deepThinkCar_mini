@@ -134,6 +134,7 @@ python3 PC_run_code/jd_deep_learning.py \
   --data-dir /path/to/labeled \
   --output-dir /path/to/training_output \
   --split-strategy run \
+  --validation-run-prefix layout_c_holdout \
   --epochs 50 \
   --batch-size 32
 ```
