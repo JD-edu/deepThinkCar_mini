@@ -45,7 +45,8 @@ class FakeLaneDetector:
         self.error_after = error_after
 
     def get_lane(self, image):
-        return (['lane'] if next(self.visible) else []), image
+        lane_count = int(next(self.visible))
+        return (['lane'] * lane_count), image
 
     def get_steering_angle(self, image, _lanes):
         if self.error_after is not None and self.angle_calls >= self.error_after:
@@ -61,7 +62,7 @@ def usable_frame():
 
 
 class OpenCvLaneFollowerTest(unittest.TestCase):
-    def run_case(self, visible, detector=None):
+    def run_case(self, visible, detector=None, **runner_options):
         capture = FakeCapture([usable_frame() for _ in visible])
         motor = DryRunMotor()
         servo = DryRunServo()
@@ -76,7 +77,8 @@ class OpenCvLaneFollowerTest(unittest.TestCase):
             preview=False,
             warmup_frames=2,
             ready_lane_frames=2,
-            lost_lane_limit=2,
+            lost_lane_limit=runner_options.pop('lost_lane_limit', 2),
+            **runner_options,
         )
         return summary, capture, motor, servo
 
@@ -96,6 +98,19 @@ class OpenCvLaneFollowerTest(unittest.TestCase):
         self.assertEqual([75.0, 75.0, 75.0], servo.angles)
         self.assertFalse(motor.is_moving)
         self.assertTrue(capture.released)
+
+    def test_two_lane_mode_stops_on_first_single_boundary_frame(self):
+        summary, _capture, motor, servo = self.run_case(
+            [2, 2, 1],
+            required_lane_count=2,
+            lost_lane_limit=1,
+        )
+        self.assertEqual(1, summary['motor_start_events'])
+        self.assertGreaterEqual(summary['motor_stop_events'], 1)
+        self.assertEqual(1, summary['partial_lane_frames'])
+        self.assertEqual(2, summary['required_lane_count'])
+        self.assertEqual([75.0, 75.0], servo.angles)
+        self.assertFalse(motor.is_moving)
 
     def test_error_after_start_stops_and_releases(self):
         capture = FakeCapture([usable_frame(), usable_frame()])

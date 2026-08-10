@@ -41,14 +41,18 @@ def run_opencv_lane_follower(
     max_frames=None,
     max_seconds=None,
     recording_writer=None,
+    required_lane_count=1,
     monotonic_fn=time.monotonic,
 ):
     if max_seconds is not None and max_seconds <= 0:
         raise ValueError('max_seconds must be positive')
+    if required_lane_count not in (1, 2):
+        raise ValueError('required_lane_count must be 1 or 2')
 
     valid_frames = 0
     lane_frames = 0
     no_lane_frames = 0
+    partial_lane_frames = 0
     rejected_quality_frames = 0
     camera_errors = 0
     consecutive_ready = 0
@@ -110,9 +114,12 @@ def run_opencv_lane_follower(
                     moving = False
                     motor_stop_events += 1
 
-            lane_visible = lanes is not None and len(lanes) > 0
+            lane_count = 0 if lanes is None else len(lanes)
+            lane_visible = lane_count >= required_lane_count
             if not lane_visible:
                 no_lane_frames += 1
+                if 0 < lane_count < required_lane_count:
+                    partial_lane_frames += 1
                 consecutive_ready = 0
                 consecutive_lost += 1
                 if moving and consecutive_lost >= lost_lane_limit:
@@ -177,6 +184,8 @@ def run_opencv_lane_follower(
         'valid_frames': valid_frames,
         'lane_frames': lane_frames,
         'no_lane_frames': no_lane_frames,
+        'partial_lane_frames': partial_lane_frames,
+        'required_lane_count': required_lane_count,
         'rejected_quality_frames': rejected_quality_frames,
         'lane_rate': lane_frames / valid_frames if valid_frames else 0.0,
         'camera_errors_at_exit': camera_errors,
@@ -205,6 +214,12 @@ def build_argument_parser():
     parser.add_argument('--max-frames', type=int)
     parser.add_argument('--max-seconds', type=float)
     parser.add_argument(
+        '--require-two-lanes',
+        action='store_true',
+        help='do not steer or drive unless both tape boundaries are visible',
+    )
+    parser.add_argument('--lost-lane-limit', type=int, default=3)
+    parser.add_argument(
         '--record-video',
         type=Path,
         help='save every normalized camera frame to a new AVI file',
@@ -224,6 +239,8 @@ def run_opencv_session(
     max_frames=None,
     max_seconds=None,
     record_video=None,
+    require_two_lanes=False,
+    lost_lane_limit=3,
     warmup_frames=30,
     watchdog_timeout=1.0,
 ):
@@ -284,11 +301,14 @@ def run_opencv_session(
         max_frames=max_frames,
         max_seconds=max_seconds,
         recording_writer=recording_writer,
+        required_lane_count=2 if require_two_lanes else 1,
+        lost_lane_limit=lost_lane_limit,
     )
     summary['drive_enabled'] = drive
     summary['source'] = str(source)
     summary['watchdog_timeout_seconds'] = watchdog_timeout if drive else None
     summary['recording'] = None if record_video is None else str(record_video)
+    summary['require_two_lanes'] = require_two_lanes
     return summary
 
 
@@ -305,6 +325,8 @@ def main(argv=None):
         parser.error('--max-frames must be positive')
     if args.max_seconds is not None and args.max_seconds <= 0:
         parser.error('--max-seconds must be positive')
+    if not 1 <= args.lost_lane_limit <= 30:
+        parser.error('--lost-lane-limit must be from 1 to 30')
     if not 0.2 <= args.watchdog_timeout <= 5.0:
         parser.error('--watchdog-timeout must be between 0.2 and 5.0 seconds')
     if args.video is None:
@@ -320,6 +342,8 @@ def main(argv=None):
             max_frames=args.max_frames,
             max_seconds=args.max_seconds,
             record_video=args.record_video,
+            require_two_lanes=args.require_two_lanes,
+            lost_lane_limit=args.lost_lane_limit,
             warmup_frames=args.warmup_frames,
             watchdog_timeout=args.watchdog_timeout,
         )

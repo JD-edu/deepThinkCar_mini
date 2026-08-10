@@ -47,6 +47,8 @@ python3 jd_3_lane_follower_opencv.py \
   --speed 10 \
   --max-seconds 15 \
   --warmup-frames 30 \
+  --require-two-lanes \
+  --lost-lane-limit 1 \
   --watchdog-timeout 1.0 \
   --record-video "$recording"
 
