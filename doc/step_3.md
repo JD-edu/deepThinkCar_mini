@@ -4,6 +4,42 @@
 3단계에서는 2단계에서 라벨링 된 데이터를 CNN을 통해서 딥러닝 트레이닝을 실행합니다. 이 단계는 라즈베리파이에서 실행하지 않고 PC에서 실행하게 됩니다.    
 라즈베리파이는 CNN을 통한 딥러닝 트레이닝을 실행하기에는 성능이 많이 부족해서 PC를 이용합니다. CNN 딥러닝 트레이닝을 하기 위해서는 다음의 단계를 실행합니다. 
 
+### 현재 스크립트로 재현하는 방법
+
+현재 `PC_run_code/jd_deep_learning.py`는 데이터와 출력 경로를 반드시
+명시하고, 기존 모델을 덮어쓰지 않는 새 디렉터리에 후보 모델과 검증
+근거를 함께 저장한다. 아래 명령은 저장소에 포함된 라벨 PNG 329장을
+temporal group으로 나눠 학습하는 예다.
+
+```bash
+python3 PC_run_code/jd_deep_learning.py \
+  --data-dir PC_run_code/data \
+  --output-dir PC_run_code/output/my_training_run \
+  --epochs 50 \
+  --batch-size 32 \
+  --validation-fraction 0.2 \
+  --temporal-group-size 20 \
+  --seed 20260810
+```
+
+출력에는 배포 후보 H5/Keras 모델, 정규화된 내부 checkpoint, 학습 이력,
+검증 예측 CSV, 데이터·모델 해시가 담긴 `training_summary.json`이 생긴다.
+후보와 기존 모델은 같은 검증 이미지 목록으로 비교한다.
+
+```bash
+python3 PC_run_code/jd_evaluate_lane_models.py \
+  --data-dir PC_run_code/data \
+  --validation-csv PC_run_code/output/my_training_run/validation_predictions.csv \
+  --model candidate=PC_run_code/output/my_training_run/lane_navigation_candidate.h5 \
+  --model deployed=models/lane_navigation_final.h5 \
+  --output PC_run_code/output/my_training_run/model_comparison.json
+```
+
+검증셋이 같은 한 번의 주행에서 나온 경우에는 낮은 오차만으로 실차
+모델을 교체하지 않는다. 학습에 쓰지 않은 독립 영상과 바퀴를 든 저속
+안전 시험을 통과한 뒤에만 `models/lane_navigation_final.h5` 승격을
+검토한다.
+
 ### /deepThinkCar-mini/data 폴더의 라벨링 데이터를 PC로 옮깁니다. 
 라즈베리파이의 워킹 폴더인 /deepThinkCar-mini/data 폴더에 저장된 라벨링 데이터인 PNG 파일들을 압축합니다.    
 압축을 하는 이유는 라즈베리파이에서 PC로 라벨링 데이터를 쉽게 전달하기 위해서 입니다. 압축을 하기 위해서는 다음 코드를 실행합니다.    
@@ -180,4 +216,3 @@ Epoch100/100까지 실행하는데 40분~50분 정도의 시간이 소요됩니�
 [3단계 딥러닝 트레이닝](https://jd-edu.github.io/deepThinkCar_mini/doc/step_3)     
 [4단계 딥러닝 차선인식 주행](https://jd-edu.github.io/deepThinkCar_mini/doc/step_4)     
 [5단계 딥러닝 오브젝트 디텍팅 주행](https://jd-edu.github.io/deepThinkCar_mini/doc/step_5) 
-

@@ -309,6 +309,7 @@ def train_model(
         writer = csv.DictWriter(
             prediction_file,
             fieldnames=('image', 'expected_angle', 'predicted_angle', 'error'),
+            lineterminator='\n',
         )
         writer.writeheader()
         for path, expected, predicted, error in zip(
