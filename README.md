@@ -121,12 +121,19 @@ python3 test_code/calibration.py
 실행기로 먼저 확인한다. `--drive`가 없으면 모터와 서보 출력은 없다.
 
 ```bash
-# 카메라와 차선 검출만 60프레임 확인
-python3 jd_3_lane_follower_opencv.py --max-frames 60
+# 1) 모터 출력 없이 120프레임 카메라/차선 검출 확인
+python3 jd_safe_drive_trial.py
 
-# 바퀴를 띄운 상태에서 짧은 저속 확인
-python3 jd_3_lane_follower_opencv.py --drive --speed 20 --max-frames 200
+# 2) 같은 검사를 다시 통과한 뒤 DRIVE를 직접 입력해야 저속 주행
+python3 jd_safe_drive_trial.py --drive
 ```
+
+안전 시험 실행기는 차선 검출률 60% 이상일 때만 다음 단계로 진행하며,
+첫 실차 주행의 속도는 20%, 길이는 200프레임 또는 10초 중 먼저 도달한
+한계를 넘길 수 없게 제한한다.
+사람과 장애물이 없는 평평한 폐쇄 트랙에서 전원 스위치를 바로 끌 수 있는
+상태로 실행한다. 이 코드는 장애물 인식을 하지 않으므로 일반 도로나 사람
+근처에서는 실행하지 않는다.
 
 `models/lane_navigation_candidate_20260807.h5`는 오늘 데이터로 학습한
 비교 후보다. 같은 주행에서 나눈 검증만 거쳤으므로 실제 주행 기본

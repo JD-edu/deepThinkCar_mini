@@ -107,6 +107,29 @@ class OpenCvLaneFollowerTest(unittest.TestCase):
         self.assertFalse(motor.is_moving)
         self.assertTrue(capture.released)
 
+    def test_wall_clock_limit_stops_and_releases_without_starting(self):
+        capture = FakeCapture([usable_frame()])
+        motor = DryRunMotor()
+        ticks = iter([0.0, 2.0])
+        summary = run_opencv_lane_follower(
+            capture,
+            FakeLaneDetector([True]),
+            motor,
+            DryRunServo(),
+            speed=20,
+            servo_offset=-15,
+            is_video=False,
+            preview=False,
+            max_frames=10,
+            max_seconds=1.0,
+            monotonic_fn=lambda: next(ticks),
+        )
+        self.assertTrue(summary['complete'])
+        self.assertTrue(summary['time_limit_reached'])
+        self.assertEqual(0, summary['valid_frames'])
+        self.assertEqual(0, motor.start_count)
+        self.assertTrue(capture.released)
+
 
 if __name__ == '__main__':
     unittest.main()

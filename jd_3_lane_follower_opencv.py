@@ -38,7 +38,12 @@ def run_opencv_lane_follower(
     lost_lane_limit=3,
     camera_error_limit=30,
     max_frames=None,
+    max_seconds=None,
+    monotonic_fn=time.monotonic,
 ):
+    if max_seconds is not None and max_seconds <= 0:
+        raise ValueError('max_seconds must be positive')
+
     valid_frames = 0
     lane_frames = 0
     no_lane_frames = 0
@@ -51,11 +56,20 @@ def run_opencv_lane_follower(
     motor_stop_events = 0
     steering_angles = []
     completed = False
+    time_limit_reached = False
     watchdog_timed_out = False
     cleanup_errors = []
+    started_at = monotonic_fn()
 
     try:
         while max_frames is None or valid_frames < max_frames:
+            if (
+                max_seconds is not None
+                and monotonic_fn() - started_at >= max_seconds
+            ):
+                time_limit_reached = True
+                completed = True
+                break
             ok, frame = read_frame(capture)
             if getattr(motor, 'timed_out', False):
                 watchdog_timed_out = True
@@ -148,6 +162,7 @@ def run_opencv_lane_follower(
 
     return {
         'complete': completed,
+        'time_limit_reached': time_limit_reached,
         'valid_frames': valid_frames,
         'lane_frames': lane_frames,
         'no_lane_frames': no_lane_frames,
@@ -176,9 +191,65 @@ def build_argument_parser():
     parser.add_argument('--speed', type=speed_percentage, default=20)
     parser.add_argument('--headless', action='store_true')
     parser.add_argument('--max-frames', type=int)
+    parser.add_argument('--max-seconds', type=float)
     parser.add_argument('--warmup-frames', type=int, default=30)
     parser.add_argument('--watchdog-timeout', type=float, default=1.0)
     return parser
+
+
+def run_opencv_session(
+    *,
+    video=None,
+    camera=0,
+    drive=False,
+    speed=20,
+    headless=False,
+    max_frames=None,
+    max_seconds=None,
+    warmup_frames=30,
+    watchdog_timeout=1.0,
+):
+    """Open one source, run the follower, and return its safety summary."""
+    source = camera if video is None else video
+    center_angle = load_center_angle(require_saved=drive)
+    lane_detector = JdOpencvLaneDetect()
+    capture = cv2.VideoCapture(source)
+    if not capture.isOpened():
+        capture.release()
+        raise RuntimeError('could not open camera/video source: %s' % source)
+    if video is None:
+        capture.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
+        capture.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
+        capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        time.sleep(2)
+
+    try:
+        motor, servo = create_actuators(
+            drive,
+            center_angle,
+            watchdog_timeout_seconds=watchdog_timeout,
+        )
+    except Exception:
+        capture.release()
+        raise
+
+    summary = run_opencv_lane_follower(
+        capture,
+        lane_detector,
+        motor,
+        servo,
+        speed=speed,
+        servo_offset=center_angle - 90.0,
+        is_video=video is not None,
+        preview=not headless,
+        warmup_frames=warmup_frames,
+        max_frames=max_frames,
+        max_seconds=max_seconds,
+    )
+    summary['drive_enabled'] = drive
+    summary['source'] = str(source)
+    summary['watchdog_timeout_seconds'] = watchdog_timeout if drive else None
+    return summary
 
 
 def main(argv=None):
@@ -188,45 +259,28 @@ def main(argv=None):
         parser.error('--drive cannot be combined with --video')
     if args.max_frames is not None and args.max_frames < 1:
         parser.error('--max-frames must be positive')
+    if args.max_seconds is not None and args.max_seconds <= 0:
+        parser.error('--max-seconds must be positive')
     if not 0.2 <= args.watchdog_timeout <= 5.0:
         parser.error('--watchdog-timeout must be between 0.2 and 5.0 seconds')
     if args.video is None:
         ensure_libcamerify(__file__, sys.argv[1:] if argv is None else argv)
 
-    source = args.camera if args.video is None else args.video
-    capture = cv2.VideoCapture(source)
-    if not capture.isOpened():
-        capture.release()
-        raise SystemExit('could not open camera/video source: %s' % source)
-    if args.video is None:
-        capture.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
-        capture.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
-        capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-        time.sleep(2)
+    try:
+        summary = run_opencv_session(
+            video=args.video,
+            camera=args.camera,
+            drive=args.drive,
+            speed=args.speed,
+            headless=args.headless,
+            max_frames=args.max_frames,
+            max_seconds=args.max_seconds,
+            warmup_frames=args.warmup_frames,
+            watchdog_timeout=args.watchdog_timeout,
+        )
+    except RuntimeError as error:
+        raise SystemExit(str(error)) from error
 
-    center_angle = load_center_angle(require_saved=args.drive)
-    motor, servo = create_actuators(
-        args.drive,
-        center_angle,
-        watchdog_timeout_seconds=args.watchdog_timeout,
-    )
-    summary = run_opencv_lane_follower(
-        capture,
-        JdOpencvLaneDetect(),
-        motor,
-        servo,
-        speed=args.speed,
-        servo_offset=center_angle - 90.0,
-        is_video=args.video is not None,
-        preview=not args.headless,
-        warmup_frames=args.warmup_frames,
-        max_frames=args.max_frames,
-    )
-    summary['drive_enabled'] = args.drive
-    summary['source'] = str(source)
-    summary['watchdog_timeout_seconds'] = (
-        args.watchdog_timeout if args.drive else None
-    )
     print(json.dumps(summary, indent=2, sort_keys=True))
     if (
         not summary['complete']
