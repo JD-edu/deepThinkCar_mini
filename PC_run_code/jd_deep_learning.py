@@ -58,7 +58,14 @@ def parse_steering_angle(path):
 
 def discover_dataset(data_directory):
     data_directory = Path(data_directory)
-    image_paths = sorted(data_directory.glob('*.png'))
+    image_paths = sorted(
+        (
+            path
+            for path in data_directory.rglob('*.png')
+            if ANGLE_PATTERN.search(path.name)
+        ),
+        key=lambda path: path.relative_to(data_directory).as_posix(),
+    )
     if len(image_paths) < 10:
         raise RuntimeError(
             'at least 10 labeled PNG files are required in %s; found %d'
@@ -101,6 +108,13 @@ def temporal_group_key(path, group_size):
     return '%s:%06d' % (run_prefix, source_frame // group_size)
 
 
+def source_run_key(path):
+    match = SOURCE_FRAME_PATTERN.search(Path(path).name)
+    if match is None:
+        raise ValueError('filename does not contain a source frame index: %s' % path)
+    return Path(path).name[: match.start()]
+
+
 def split_dataset_indices(image_paths, validation_fraction, seed, temporal_group_size):
     groups = np.asarray(
         [temporal_group_key(path, temporal_group_size) for path in image_paths]
@@ -115,6 +129,31 @@ def split_dataset_indices(image_paths, validation_fraction, seed, temporal_group
     indices = np.arange(len(image_paths))
     train_indices, validation_indices = next(splitter.split(indices, groups=groups))
     return train_indices, validation_indices, groups
+
+
+def split_dataset_by_run_indices(image_paths, validation_fraction, seed):
+    groups = np.asarray([source_run_key(path) for path in image_paths])
+    if len(np.unique(groups)) < 3:
+        raise RuntimeError(
+            'run-level validation requires at least three independent recordings'
+        )
+    splitter = GroupShuffleSplit(
+        n_splits=1,
+        test_size=validation_fraction,
+        random_state=seed,
+    )
+    indices = np.arange(len(image_paths))
+    train_indices, validation_indices = next(splitter.split(indices, groups=groups))
+    return train_indices, validation_indices, groups
+
+
+def steering_region_counts(angles):
+    angles = np.asarray(angles)
+    return {
+        'left_below_85': int(np.sum(angles < 85.0)),
+        'center_85_to_95': int(np.sum((angles >= 85.0) & (angles <= 95.0))),
+        'right_above_95': int(np.sum(angles > 95.0)),
+    }
 
 
 def augment_with_horizontal_flip(images, angles):
@@ -199,6 +238,7 @@ def train_model(
     seed=20260807,
     flip_augmentation=True,
     temporal_group_size=20,
+    split_strategy='temporal',
 ):
     if epochs < 1 or batch_size < 1:
         raise ValueError('epochs and batch_size must be positive')
@@ -206,19 +246,43 @@ def train_model(
         raise ValueError('validation_fraction must be between 0.1 and 0.4')
     if temporal_group_size < 2:
         raise ValueError('temporal_group_size must be at least 2')
+    if split_strategy not in ('temporal', 'run'):
+        raise ValueError('split_strategy must be temporal or run')
 
     keras.utils.set_random_seed(seed)
     image_paths, angles = discover_dataset(data_directory)
-    train_indices, validation_indices, temporal_groups = split_dataset_indices(
-        image_paths,
-        validation_fraction,
-        seed,
-        temporal_group_size,
-    )
+    if split_strategy == 'run':
+        train_indices, validation_indices, split_groups = (
+            split_dataset_by_run_indices(
+                image_paths,
+                validation_fraction,
+                seed,
+            )
+        )
+    else:
+        train_indices, validation_indices, split_groups = split_dataset_indices(
+            image_paths,
+            validation_fraction,
+            seed,
+            temporal_group_size,
+        )
     train_paths = [image_paths[index] for index in train_indices]
     validation_paths = [image_paths[index] for index in validation_indices]
     train_angles = angles[train_indices]
     validation_angles = angles[validation_indices]
+    original_train_angles = train_angles.copy()
+    if split_strategy == 'run':
+        for split_name, split_angles in (
+            ('training', train_angles),
+            ('validation', validation_angles),
+        ):
+            region_counts = steering_region_counts(split_angles)
+            if min(region_counts.values()) < 5:
+                raise RuntimeError(
+                    '%s run split lacks steering coverage: %s; collect another '
+                    'complete run with left, center, and right examples'
+                    % (split_name, region_counts)
+                )
     train_images = load_images(train_paths)
     validation_images = load_images(validation_paths)
 
@@ -335,14 +399,30 @@ def train_model(
         'validation_images': len(validation_images),
         'flip_augmentation': flip_augmentation,
         'target_normalization': '(angle - 90) / 90',
-        'split_strategy': 'source-frame temporal groups',
+        'split_strategy': (
+            'held-out source recording runs'
+            if split_strategy == 'run'
+            else 'source-frame temporal groups'
+        ),
         'validation_fraction_requested': validation_fraction,
         'validation_fraction_actual': len(validation_images) / len(image_paths),
         'temporal_group_size': temporal_group_size,
-        'train_temporal_groups': len(np.unique(temporal_groups[train_indices])),
-        'validation_temporal_groups': len(
-            np.unique(temporal_groups[validation_indices])
+        'train_split_groups': len(np.unique(split_groups[train_indices])),
+        'validation_split_groups': len(np.unique(split_groups[validation_indices])),
+        'dataset_source_runs': len(
+            {source_run_key(path) for path in image_paths}
         ),
+        'train_source_runs': sorted(
+            {source_run_key(path) for path in train_paths}
+        ),
+        'validation_source_runs': sorted(
+            {source_run_key(path) for path in validation_paths}
+        ),
+        'dataset_steering_regions': steering_region_counts(angles),
+        'train_steering_regions_before_augmentation': steering_region_counts(
+            original_train_angles
+        ),
+        'validation_steering_regions': steering_region_counts(validation_angles),
         'seed': seed,
         'epochs_requested': epochs,
         'epochs_completed': len(history.history['loss']),
@@ -365,7 +445,12 @@ def train_model(
         'input_contract': 'BGR lower half -> YUV -> blur -> 200x66 -> /255',
         'output_contract': 'one steering angle in degrees',
         'promotion_status': 'candidate_requires_independent_drive_test',
-        'validation_limitation': 'same-session temporal split is not independent',
+        'validation_limitation': (
+            'held-out recordings still require a held-out track layout for '
+            'strong generalization evidence'
+            if split_strategy == 'run'
+            else 'same-session temporal split is not independent'
+        ),
         'python_version': sys.version.split()[0],
         'opencv_version': cv2.__version__,
         'numpy_version': np.__version__,
@@ -390,6 +475,12 @@ def main(argv=None):
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--validation-fraction', type=float, default=0.2)
     parser.add_argument('--temporal-group-size', type=int, default=20)
+    parser.add_argument(
+        '--split-strategy',
+        choices=('temporal', 'run'),
+        default='temporal',
+        help='use run to keep complete recordings out of training',
+    )
     parser.add_argument('--seed', type=int, default=20260807)
     parser.add_argument('--no-flip-augmentation', action='store_true')
     args = parser.parse_args(argv)
@@ -402,6 +493,7 @@ def main(argv=None):
         seed=args.seed,
         flip_augmentation=not args.no_flip_augmentation,
         temporal_group_size=args.temporal_group_size,
+        split_strategy=args.split_strategy,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0

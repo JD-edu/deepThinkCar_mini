@@ -26,6 +26,18 @@ class FakeCapture:
         self.released = True
 
 
+class FakeWriter:
+    def __init__(self):
+        self.frames = []
+        self.released = False
+
+    def write(self, frame):
+        self.frames.append(frame.copy())
+
+    def release(self):
+        self.released = True
+
+
 class FakeLaneDetector:
     def __init__(self, visible, error_after=None):
         self.visible = iter(visible)
@@ -128,6 +140,25 @@ class OpenCvLaneFollowerTest(unittest.TestCase):
         self.assertTrue(summary['time_limit_reached'])
         self.assertEqual(0, summary['valid_frames'])
         self.assertEqual(0, motor.start_count)
+        self.assertTrue(capture.released)
+
+    def test_recording_keeps_every_valid_frame_and_releases_writer(self):
+        capture = FakeCapture([usable_frame(), usable_frame(), usable_frame()])
+        writer = FakeWriter()
+        summary = run_opencv_lane_follower(
+            capture,
+            FakeLaneDetector([True, False, True]),
+            DryRunMotor(),
+            DryRunServo(),
+            speed=20,
+            servo_offset=-15,
+            is_video=True,
+            preview=False,
+            recording_writer=writer,
+        )
+        self.assertEqual(3, summary['recorded_frames'])
+        self.assertEqual(3, len(writer.frames))
+        self.assertTrue(writer.released)
         self.assertTrue(capture.released)
 
 

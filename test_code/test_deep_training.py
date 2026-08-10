@@ -38,10 +38,13 @@ class DeepTrainingTest(unittest.TestCase):
     def test_dataset_discovery_uses_only_compatible_png_names(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
+            nested = root / 'recording_a'
+            nested.mkdir()
             image = np.zeros((24, 32, 3), dtype=np.uint8)
             for index in range(10):
-                cv2.imwrite(str(root / ('run_%03d_090.png' % index)), image)
+                cv2.imwrite(str(nested / ('run_%03d_090.png' % index)), image)
             (root / 'manifest.csv').write_text('ignored')
+            cv2.imwrite(str(root / 'preview.png'), image)
             paths, angles = training.discover_dataset(root)
             self.assertEqual(10, len(paths))
             self.assertTrue(np.all(angles == 90))
@@ -70,6 +73,44 @@ class DeepTrainingTest(unittest.TestCase):
             temporal_group_size=10,
         )
         self.assertTrue(set(groups[train]).isdisjoint(set(groups[validation])))
+
+    def test_run_split_holds_out_complete_recordings(self):
+        paths = [
+            Path('%s_f%06d_090.png' % (run, frame))
+            for run in ('run_a', 'run_b', 'run_c')
+            for frame in range(20)
+        ]
+        train, validation, groups = training.split_dataset_by_run_indices(
+            paths,
+            validation_fraction=0.25,
+            seed=7,
+        )
+        self.assertTrue(set(groups[train]).isdisjoint(set(groups[validation])))
+        self.assertGreaterEqual(len(set(groups[train])), 2)
+        self.assertGreaterEqual(len(set(groups[validation])), 1)
+
+    def test_run_split_rejects_fewer_than_three_recordings(self):
+        paths = [
+            Path('%s_f%06d_090.png' % (run, frame))
+            for run in ('run_a', 'run_b')
+            for frame in range(20)
+        ]
+        with self.assertRaisesRegex(RuntimeError, 'at least three'):
+            training.split_dataset_by_run_indices(
+                paths,
+                validation_fraction=0.25,
+                seed=7,
+            )
+
+    def test_steering_region_counts_exposes_coverage(self):
+        self.assertEqual(
+            {
+                'left_below_85': 2,
+                'center_85_to_95': 2,
+                'right_above_95': 2,
+            },
+            training.steering_region_counts([60, 84, 85, 95, 96, 130]),
+        )
 
 
 if __name__ == '__main__':

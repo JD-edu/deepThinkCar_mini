@@ -17,8 +17,18 @@ import statistics
 import zipfile
 
 import cv2
+import numpy as np
 
+from jd_drive_runtime import frame_quality
 from jd_opencv_lane_detect import JdOpencvLaneDetect
+
+
+MIN_LOOKAHEAD_WIDTH_RATIO = 0.15
+MAX_LOOKAHEAD_WIDTH_RATIO = 0.75
+MIN_BOTTOM_WIDTH_RATIO = 0.30
+MAX_BOTTOM_WIDTH_RATIO = 1.50
+MIN_TRAINING_ANGLE = 45
+MAX_TRAINING_ANGLE = 135
 
 
 def positive_integer(value):
@@ -93,6 +103,57 @@ def _write_training_zip(output_directory, zip_path):
         raise
 
 
+def assess_lane_geometry(
+    frame,
+    lane_lines,
+    *,
+    require_two_lanes=True,
+    min_lookahead_width_ratio=MIN_LOOKAHEAD_WIDTH_RATIO,
+    max_lookahead_width_ratio=MAX_LOOKAHEAD_WIDTH_RATIO,
+    min_bottom_width_ratio=MIN_BOTTOM_WIDTH_RATIO,
+    max_bottom_width_ratio=MAX_BOTTOM_WIDTH_RATIO,
+):
+    """Check that detected tape components form a plausible lane corridor."""
+    lane_count = 0 if lane_lines is None else len(lane_lines)
+    metrics = {
+        'lane_count': lane_count,
+        'lookahead_width_ratio': None,
+        'bottom_width_ratio': None,
+    }
+    if lane_count == 0:
+        return False, 'lane_not_detected', metrics
+    if require_two_lanes and lane_count != 2:
+        return False, 'requires_two_lane_boundaries', metrics
+    if lane_count == 1:
+        return True, 'accepted_single_boundary', metrics
+
+    _height, width = frame.shape[:2]
+    try:
+        endpoints = [np.asarray(line).reshape(-1)[:4] for line in lane_lines]
+        if any(len(endpoint) != 4 for endpoint in endpoints):
+            raise ValueError
+        endpoints.sort(key=lambda endpoint: float(endpoint[2]))
+        left, right = endpoints[:2]
+        lookahead_width_ratio = float(right[2] - left[2]) / width
+        bottom_width_ratio = float(right[0] - left[0]) / width
+    except (TypeError, ValueError, IndexError):
+        return False, 'invalid_lane_geometry', metrics
+
+    metrics.update(
+        {
+            'lookahead_width_ratio': lookahead_width_ratio,
+            'bottom_width_ratio': bottom_width_ratio,
+        }
+    )
+    if bottom_width_ratio <= 0:
+        return False, 'crossed_lane_boundaries', metrics
+    if not min_lookahead_width_ratio <= lookahead_width_ratio <= max_lookahead_width_ratio:
+        return False, 'implausible_lookahead_width', metrics
+    if not min_bottom_width_ratio <= bottom_width_ratio <= max_bottom_width_ratio:
+        return False, 'implausible_bottom_width', metrics
+    return True, 'accepted_two_boundaries', metrics
+
+
 def convert_video(
     video_path,
     output_directory,
@@ -101,6 +162,7 @@ def convert_video(
     sample_every=1,
     preview=False,
     detector=None,
+    require_two_lanes=True,
 ):
     video_path = Path(video_path)
     output_directory = Path(output_directory)
@@ -126,6 +188,8 @@ def convert_video(
     sampled_frames = 0
     labeled_frames = 0
     angles = []
+    lane_count_counts = Counter()
+    rejection_counts = Counter()
     stopped_by_user = False
     run_id = source_run_id(video_path, source_sha256)
 
@@ -135,7 +199,18 @@ def convert_video(
         with manifest_path.open('w', encoding='utf-8', newline='') as manifest_file:
             writer = csv.DictWriter(
                 manifest_file,
-                fieldnames=('image', 'source_frame', 'steering_angle', 'status'),
+                fieldnames=(
+                    'image',
+                    'source_frame',
+                    'steering_angle',
+                    'raw_steering_angle',
+                    'status',
+                    'lane_count',
+                    'lookahead_width_ratio',
+                    'bottom_width_ratio',
+                    'frame_mean',
+                    'frame_stddev',
+                ),
             )
             writer.writeheader()
 
@@ -149,37 +224,71 @@ def convert_video(
                     continue
                 sampled_frames += 1
 
+                usable, frame_mean, frame_stddev = frame_quality(frame)
                 lanes, lane_image = detector.get_lane(frame)
-                angle, angle_image = detector.get_steering_angle(lane_image, lanes)
+                lane_count = 0 if lanes is None else len(lanes)
+                lane_count_counts[lane_count] += 1
+                geometry_ok, geometry_status, geometry = assess_lane_geometry(
+                    frame,
+                    lanes,
+                    require_two_lanes=require_two_lanes,
+                )
+                raw_angle = None
+                angle_image = None
+                if lane_count:
+                    raw_method = getattr(detector, 'get_raw_steering_angle', None)
+                    if raw_method is None:
+                        raw_angle, angle_image = detector.get_steering_angle(
+                            lane_image,
+                            lanes,
+                        )
+                    else:
+                        raw_angle, angle_image = raw_method(lane_image, lanes)
                 image_name = ''
                 steering_angle = ''
-                status = 'lane_not_detected'
-                if angle_image is not None:
-                    angle = int(round(float(angle)))
+                status = geometry_status
+                if not usable:
+                    status = 'unusable_frame_quality'
+                elif geometry_ok and angle_image is not None:
+                    angle = int(round(float(raw_angle)))
                     if not 0 <= angle <= 180:
                         raise RuntimeError(
                             'detector returned unsafe steering angle %d at frame %d'
                             % (angle, source_frame)
                         )
-                    image_name = '%s_f%06d_%03d.png' % (
-                        run_id,
-                        source_frame,
-                        angle,
-                    )
-                    image_path = temporary_directory / image_name
-                    if not cv2.imwrite(str(image_path), frame):
-                        raise RuntimeError('failed to write image: %s' % image_path)
-                    labeled_frames += 1
-                    angles.append(angle)
-                    steering_angle = angle
-                    status = 'labeled'
+                    if not MIN_TRAINING_ANGLE <= angle <= MAX_TRAINING_ANGLE:
+                        status = 'angle_outside_training_envelope'
+                        rejection_counts[status] += 1
+                    else:
+                        image_name = '%s_f%06d_%03d.png' % (
+                            run_id,
+                            source_frame,
+                            angle,
+                        )
+                        image_path = temporary_directory / image_name
+                        if not cv2.imwrite(str(image_path), frame):
+                            raise RuntimeError('failed to write image: %s' % image_path)
+                        labeled_frames += 1
+                        angles.append(angle)
+                        steering_angle = angle
+                        status = 'labeled'
+                else:
+                    rejection_counts[status] += 1
 
                 writer.writerow(
                     {
                         'image': image_name,
                         'source_frame': source_frame,
                         'steering_angle': steering_angle,
+                        'raw_steering_angle': (
+                            '' if raw_angle is None else float(raw_angle)
+                        ),
                         'status': status,
+                        'lane_count': lane_count,
+                        'lookahead_width_ratio': geometry['lookahead_width_ratio'],
+                        'bottom_width_ratio': geometry['bottom_width_ratio'],
+                        'frame_mean': frame_mean,
+                        'frame_stddev': frame_stddev,
                     }
                 )
 
@@ -225,6 +334,30 @@ def convert_video(
             'angle_mean': statistics.fmean(angles),
             'angle_median': statistics.median(angles),
             'angle_counts': {str(key): angle_counts[key] for key in sorted(angle_counts)},
+            'label_policy': (
+                'raw OpenCV geometry, two plausible tape boundaries required'
+                if require_two_lanes
+                else 'raw OpenCV geometry, one or two tape boundaries allowed'
+            ),
+            'require_two_lanes': require_two_lanes,
+            'lane_count_counts': {
+                str(key): lane_count_counts[key] for key in sorted(lane_count_counts)
+            },
+            'rejection_counts': dict(sorted(rejection_counts.items())),
+            'geometry_thresholds': {
+                'lookahead_width_ratio': [
+                    MIN_LOOKAHEAD_WIDTH_RATIO,
+                    MAX_LOOKAHEAD_WIDTH_RATIO,
+                ],
+                'bottom_width_ratio': [
+                    MIN_BOTTOM_WIDTH_RATIO,
+                    MAX_BOTTOM_WIDTH_RATIO,
+                ],
+                'training_angle_degrees': [
+                    MIN_TRAINING_ANGLE,
+                    MAX_TRAINING_ANGLE,
+                ],
+            },
             'output_directory': str(output_directory),
             'zip_path': None if zip_path is None else str(zip_path),
         }
@@ -256,10 +389,15 @@ def main(argv=None):
         '--zip',
         dest='zip_path',
         type=Path,
-        help='optional archive containing PNG labels and metadata under data/',
+        help='optional training archive; it extracts as data/*.png',
     )
     parser.add_argument('--sample-every', type=positive_integer, default=1)
     parser.add_argument('--preview', action='store_true')
+    parser.add_argument(
+        '--allow-single-lane',
+        action='store_true',
+        help='allow inferred labels from one boundary (not recommended)',
+    )
     args = parser.parse_args(argv)
 
     output_directory = args.output_dir
@@ -271,6 +409,7 @@ def main(argv=None):
         zip_path=args.zip_path,
         sample_every=args.sample_every,
         preview=args.preview,
+        require_two_lanes=not args.allow_single_lane,
     )
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0

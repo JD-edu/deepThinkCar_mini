@@ -100,6 +100,44 @@ OpenCV 기반 차선인식 주행을 하는 파이썬 코드에 대한 설명은
 
 [2~5단계 실제 검증 기록 (2026-08-07)](doc/verified_step_2_to_5_2026-08-07.md)
 
+#### 현재 차량으로 멀티트랙 데이터 다시 수집
+
+한 트랙의 연속 프레임을 무작위로 나누면 배경과 코너 순서를 외운 결과를
+검증 성능으로 오인할 수 있다. 현재 카메라 높이와 검정 테이프 규격은
+유지하되, 직선·좌우 코너·S자 배치와 시작 위치를 바꾼 독립 녹화를 최소
+3개 만든다. Pi의 RealVNC 터미널에서는 다음처럼 15초 제한 수집을 한다.
+
+```bash
+./run_opencv_data_collection.sh layout_a_run1 drive
+./run_opencv_data_collection.sh layout_b_run1 drive
+./run_opencv_data_collection.sh layout_c_holdout drive
+```
+
+원본 AVI를 PC로 복사한 뒤 각 영상을 별도 출력 디렉터리로 변환한다.
+기본 품질 정책은 정상 밝기의 프레임에서 서로 교차하지 않고 폭이 타당한
+검정 테이프 경계 두 개가 검출될 때만, 이전 프레임에 의존하지 않는 raw
+OpenCV 각도를 저장한다.
+
+```bash
+python3 jd_2_get_train_data.py \
+  --video /path/to/layout_a_run1.avi \
+  --output-dir /path/to/labeled/layout_a_run1 \
+  --sample-every 2
+```
+
+모든 run 폴더의 상위 디렉터리를 지정하고 `run` 분리를 사용한다. 이
+모드는 독립 녹화가 3개보다 적거나 학습·검증 데이터에 좌회전, 중앙,
+우회전 표본이 각각 5개보다 적으면 학습을 시작하지 않는다.
+
+```bash
+python3 PC_run_code/jd_deep_learning.py \
+  --data-dir /path/to/labeled \
+  --output-dir /path/to/training_output \
+  --split-strategy run \
+  --epochs 50 \
+  --batch-size 32
+```
+
 #### 현재 안전 실행 순서
 
 실차 출력은 저장된 서보 중앙값이 있을 때만 허용한다. 먼저 모터를 끈

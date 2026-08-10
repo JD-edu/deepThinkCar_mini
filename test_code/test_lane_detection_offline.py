@@ -35,6 +35,22 @@ class LaneDetectionOfflineTest(unittest.TestCase):
         self.assertIsNotNone(heading_image)
         self.assertLessEqual(abs(angle - 90), 3)
 
+    def test_raw_label_does_not_depend_on_previous_steering_state(self):
+        frame = make_floor()
+        cv2.line(frame, (10, HEIGHT - 1), (100, HEIGHT // 2), (20, 20, 20), 14)
+        cv2.line(frame, (310, HEIGHT - 1), (220, HEIGHT // 2), (20, 20, 20), 14)
+        lanes, lane_image = self.detector.get_lane(frame)
+        self.detector.curr_steering_angle = 45
+
+        raw_angle, heading_image = self.detector.get_raw_steering_angle(
+            lane_image,
+            lanes,
+        )
+
+        self.assertIsNotNone(heading_image)
+        self.assertLessEqual(abs(raw_angle - 90), 3)
+        self.assertEqual(45, self.detector.curr_steering_angle)
+
     def test_vertical_boundaries_are_not_discarded(self):
         frame = make_floor()
         cv2.line(frame, (70, HEIGHT - 1), (70, HEIGHT // 2), (10, 10, 10), 14)

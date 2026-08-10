@@ -42,6 +42,14 @@ class JdOpencvLaneDetect(object):
 
         return self.curr_steering_angle, curr_heading_image
 
+    def get_raw_steering_angle(self, img_lane, lane_lines):
+        """Return an image-only label without temporal steering hysteresis."""
+        if len(lane_lines) == 0:
+            return 0, None
+        steering_angle = compute_steering_angle(img_lane, lane_lines)
+        heading_image = display_heading_line(img_lane, steering_angle)
+        return steering_angle, heading_image
+
 ############################
 # Frame processing steps
 ############################

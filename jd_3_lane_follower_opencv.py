@@ -2,6 +2,7 @@
 
 import argparse
 import json
+from pathlib import Path
 import statistics
 import sys
 import time
@@ -39,6 +40,7 @@ def run_opencv_lane_follower(
     camera_error_limit=30,
     max_frames=None,
     max_seconds=None,
+    recording_writer=None,
     monotonic_fn=time.monotonic,
 ):
     if max_seconds is not None and max_seconds <= 0:
@@ -54,6 +56,7 @@ def run_opencv_lane_follower(
     moving = False
     motor_start_events = 0
     motor_stop_events = 0
+    recorded_frames = 0
     steering_angles = []
     completed = False
     time_limit_reached = False
@@ -92,6 +95,9 @@ def run_opencv_lane_follower(
 
             camera_errors = 0
             valid_frames += 1
+            if recording_writer is not None:
+                recording_writer.write(frame)
+                recorded_frames += 1
             usable, _brightness, _contrast = frame_quality(frame)
             lanes = []
             lane_frame = frame
@@ -159,6 +165,11 @@ def run_opencv_lane_follower(
             capture,
             preview=preview,
         )
+        if recording_writer is not None:
+            try:
+                recording_writer.release()
+            except Exception as error:
+                cleanup_errors.append('recording release failed: %s' % error)
 
     return {
         'complete': completed,
@@ -180,6 +191,7 @@ def run_opencv_lane_follower(
         'watchdog_timed_out': watchdog_timed_out,
         'cleanup_errors': cleanup_errors,
         'speed_percent': speed,
+        'recorded_frames': recorded_frames,
     }
 
 
@@ -192,6 +204,11 @@ def build_argument_parser():
     parser.add_argument('--headless', action='store_true')
     parser.add_argument('--max-frames', type=int)
     parser.add_argument('--max-seconds', type=float)
+    parser.add_argument(
+        '--record-video',
+        type=Path,
+        help='save every normalized camera frame to a new AVI file',
+    )
     parser.add_argument('--warmup-frames', type=int, default=30)
     parser.add_argument('--watchdog-timeout', type=float, default=1.0)
     return parser
@@ -206,6 +223,7 @@ def run_opencv_session(
     headless=False,
     max_frames=None,
     max_seconds=None,
+    record_video=None,
     warmup_frames=30,
     watchdog_timeout=1.0,
 ):
@@ -223,6 +241,24 @@ def run_opencv_session(
         capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         time.sleep(2)
 
+    recording_writer = None
+    if record_video is not None:
+        record_video = Path(record_video)
+        if record_video.exists():
+            capture.release()
+            raise RuntimeError('recording already exists: %s' % record_video)
+        record_video.parent.mkdir(parents=True, exist_ok=True)
+        recording_writer = cv2.VideoWriter(
+            str(record_video),
+            cv2.VideoWriter_fourcc(*'XVID'),
+            20.0,
+            (CAMERA_WIDTH, CAMERA_HEIGHT),
+        )
+        if not recording_writer.isOpened():
+            recording_writer.release()
+            capture.release()
+            raise RuntimeError('could not create recording: %s' % record_video)
+
     try:
         motor, servo = create_actuators(
             drive,
@@ -230,6 +266,8 @@ def run_opencv_session(
             watchdog_timeout_seconds=watchdog_timeout,
         )
     except Exception:
+        if recording_writer is not None:
+            recording_writer.release()
         capture.release()
         raise
 
@@ -245,10 +283,12 @@ def run_opencv_session(
         warmup_frames=warmup_frames,
         max_frames=max_frames,
         max_seconds=max_seconds,
+        recording_writer=recording_writer,
     )
     summary['drive_enabled'] = drive
     summary['source'] = str(source)
     summary['watchdog_timeout_seconds'] = watchdog_timeout if drive else None
+    summary['recording'] = None if record_video is None else str(record_video)
     return summary
 
 
@@ -257,6 +297,10 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.drive and args.video is not None:
         parser.error('--drive cannot be combined with --video')
+    if args.video is not None and args.record_video is not None:
+        parser.error('--record-video is only available with a live camera')
+    if args.drive and args.max_frames is None and args.max_seconds is None:
+        parser.error('--drive requires --max-frames or --max-seconds')
     if args.max_frames is not None and args.max_frames < 1:
         parser.error('--max-frames must be positive')
     if args.max_seconds is not None and args.max_seconds <= 0:
@@ -275,6 +319,7 @@ def main(argv=None):
             headless=args.headless,
             max_frames=args.max_frames,
             max_seconds=args.max_seconds,
+            record_video=args.record_video,
             warmup_frames=args.warmup_frames,
             watchdog_timeout=args.watchdog_timeout,
         )
